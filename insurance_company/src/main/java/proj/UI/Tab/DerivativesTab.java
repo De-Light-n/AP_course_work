@@ -20,6 +20,12 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.*;
 
+/**
+ * Вкладка для перегляду, додавання, фільтрації та сортування деривативів.
+ * Дозволяє працювати з картками деривативів, відкривати деталі, додавати нові
+ * деривативи,
+ * а також використовувати фільтри, сортування та пагінацію.
+ */
 public class DerivativesTab extends AbstractTab {
     private static final Logger logger = LogManager.getLogger(DerivativesTab.class);
 
@@ -31,33 +37,40 @@ public class DerivativesTab extends AbstractTab {
     private JTextField minValueField, maxValueField;
     private JTextField searchNameField;
 
-    // Додайте поля для пагінації:
     private int currentPage = 1;
     private int totalPages = 1;
     private final int CARDS_PER_PAGE = 9;
     private JButton prevPageButton, nextPageButton;
     private JLabel pageLabel;
 
+    /**
+     * Створює вкладку для роботи з деривативами.
+     *
+     * @param mainTabbedPane головна панель вкладок
+     */
     public DerivativesTab(JTabbedPane mainTabbedPane) {
         super(mainTabbedPane);
         this.derivativeRepository = new DerivativeRepository();
         initializeUI();
 
-        mainTabbedPane.addChangeListener(_ -> {
-        int idx = mainTabbedPane.getSelectedIndex();
-        if (idx != -1 && mainTabbedPane.getComponentAt(idx) == this) {
-            loadDerivatives();
-            updateDerivativesDisplay();
-        }
-    });
+        mainTabbedPane.addChangeListener(e -> {
+            int idx = mainTabbedPane.getSelectedIndex();
+            if (idx != -1 && mainTabbedPane.getComponentAt(idx) == this) {
+                loadDerivatives();
+                updateDerivativesDisplay();
+            }
+        });
     }
 
+    /**
+     * Ініціалізує інтерфейс вкладки, панелі фільтрів, сортування, картки
+     * деривативів та пагінацію.
+     */
     @Override
     protected void initializeUI() {
         logger.info("Ініціалізація вкладки 'Деривативи'");
         setLayout(new BorderLayout());
 
-        // --- Панель інструментів і фільтрів ---
         JPanel searchSortPanel = new JPanel(new GridBagLayout());
         searchSortPanel.setOpaque(false);
 
@@ -67,23 +80,22 @@ public class DerivativesTab extends AbstractTab {
         gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0;
 
-        // Додаємо кнопку першою
         gbc.gridx = 0;
         addButton = createStyledButton("Додати дериватив");
+        addButton.setName("addButton");
         addButton.addActionListener(new AddButtonListener());
         searchSortPanel.add(addButton, gbc);
 
-        // Далі — пошук
         gbc.gridx++;
         searchSortPanel.add(new JLabel("Пошук:"), gbc);
 
         gbc.gridx++;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         searchNameField = createFancyTextField(12);
+        searchNameField.setName("searchNameField");
         searchNameField.getDocument().addDocumentListener(new SearchDocumentListener());
         searchSortPanel.add(searchNameField, gbc);
 
-        // Сума
         gbc.gridx++;
         gbc.fill = GridBagConstraints.NONE;
         searchSortPanel.add(new JLabel("Сума:"), gbc);
@@ -91,6 +103,7 @@ public class DerivativesTab extends AbstractTab {
         gbc.gridx++;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         minValueField = createFancyTextField(5);
+        minValueField.setName("minValueField");
         minValueField.getDocument().addDocumentListener(new SearchDocumentListener());
         searchSortPanel.add(minValueField, gbc);
 
@@ -101,10 +114,10 @@ public class DerivativesTab extends AbstractTab {
         gbc.gridx++;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         maxValueField = createFancyTextField(5);
+        maxValueField.setName("maxValueField");
         maxValueField.getDocument().addDocumentListener(new SearchDocumentListener());
         searchSortPanel.add(maxValueField, gbc);
 
-        // Сортування
         gbc.gridx++;
         gbc.fill = GridBagConstraints.NONE;
         searchSortPanel.add(new JLabel("Сортувати:"), gbc);
@@ -119,45 +132,44 @@ public class DerivativesTab extends AbstractTab {
                 "Датою (новіші)",
                 "Датою (старіші)"
         });
-        sortComboBox.addActionListener(_ -> updateDerivativesDisplay());
+        sortComboBox.setName("sortComboBox");
+        sortComboBox.addActionListener(e -> updateDerivativesDisplay());
         searchSortPanel.add(sortComboBox, gbc);
 
-        // Додаємо обводку з назвою "Фільтри та інструменти"
         searchSortPanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(180, 180, 180), 3, true),
-            "Фільтри та інструменти",
-            TitledBorder.LEFT, TitledBorder.TOP,
-            DEFAULT_FONT.deriveFont(Font.BOLD, 13)
-        ));
+                BorderFactory.createLineBorder(new Color(180, 180, 180), 3, true),
+                "Фільтри та інструменти",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                DEFAULT_FONT.deriveFont(Font.BOLD, 13)));
 
-        // --- Панель з картками деривативів ---
         derivativesPanel = new JPanel(new GridBagLayout());
+        derivativesPanel.setName("derivativesPanel");
         derivativesPanel.setBackground(BACKGROUND_COLOR);
 
-        // Додаємо обводку з назвою "Директиви"
         derivativesPanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(180, 180, 180), 3, true),
-            "Директиви",
-            TitledBorder.LEFT, TitledBorder.TOP,
-            DEFAULT_FONT.deriveFont(Font.BOLD, 13)
-        ));
+                BorderFactory.createLineBorder(new Color(180, 180, 180), 3, true),
+                "Директиви",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                DEFAULT_FONT.deriveFont(Font.BOLD, 13)));
 
         JScrollPane scrollPane = new JScrollPane(derivativesPanel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        // Pagination panel
         JPanel paginationPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         prevPageButton = new JButton("Назад");
+        prevPageButton.setName("prevPageButton");
         nextPageButton = new JButton("Вперед");
+        nextPageButton.setName("nextPageButton");
         pageLabel = new JLabel();
-        prevPageButton.addActionListener(_ -> {
+        pageLabel.setName("pageLabel");
+        prevPageButton.addActionListener(e -> {
             if (currentPage > 1) {
                 currentPage--;
                 updateDerivativesDisplay();
             }
         });
-        nextPageButton.addActionListener(_ -> {
+        nextPageButton.addActionListener(e -> {
             if (currentPage < totalPages) {
                 currentPage++;
                 updateDerivativesDisplay();
@@ -167,14 +179,12 @@ public class DerivativesTab extends AbstractTab {
         paginationPanel.add(pageLabel);
         paginationPanel.add(nextPageButton);
 
-        // --- Головна панель вкладки ---
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(120, 120, 180), 4, true),
-            "Контроль директивами",
-            TitledBorder.LEFT, TitledBorder.TOP,
-            DEFAULT_FONT.deriveFont(Font.BOLD, 14)
-        ));
+                BorderFactory.createLineBorder(new Color(120, 120, 180), 4, true),
+                "Контроль директивами",
+                TitledBorder.LEFT, TitledBorder.TOP,
+                DEFAULT_FONT.deriveFont(Font.BOLD, 14)));
         mainPanel.setOpaque(false);
 
         mainPanel.add(searchSortPanel, BorderLayout.NORTH);
@@ -183,10 +193,12 @@ public class DerivativesTab extends AbstractTab {
 
         add(mainPanel, BorderLayout.CENTER);
 
-        // Load initial data
         loadDerivatives();
     }
 
+    /**
+     * Завантажує всі деривативи з репозиторію та оновлює відображення.
+     */
     private void loadDerivatives() {
         logger.info("Завантаження деривативів");
         derivativesPanel.removeAll();
@@ -201,6 +213,10 @@ public class DerivativesTab extends AbstractTab {
         }
     }
 
+    /**
+     * Оновлює відображення карток деривативів з урахуванням фільтрів, сортування та
+     * пагінації.
+     */
     private void updateDerivativesDisplay() {
         derivativesPanel.removeAll();
 
@@ -241,16 +257,19 @@ public class DerivativesTab extends AbstractTab {
         derivativesPanel.repaint();
     }
 
+    /**
+     * Фільтрує деривативи за назвою та діапазоном вартості.
+     *
+     * @return відфільтрований список деривативів
+     */
     private List<Derivative> filterDerivatives() {
         List<Derivative> filtered = new ArrayList<>(allDerivatives);
 
-        // Filter by name
         String nameSearch = searchNameField.getText().toLowerCase();
         if (!nameSearch.isEmpty()) {
             filtered.removeIf(d -> !d.getName().toLowerCase().contains(nameSearch));
         }
 
-        // Filter by value range
         try {
             double minValue = minValueField.getText().isEmpty() ? 0 : Double.parseDouble(minValueField.getText());
             double maxValue = maxValueField.getText().isEmpty() ? Double.MAX_VALUE
@@ -258,12 +277,17 @@ public class DerivativesTab extends AbstractTab {
 
             filtered.removeIf(d -> d.getTotalValue() < minValue || d.getTotalValue() > maxValue);
         } catch (NumberFormatException e) {
-            // Ignore invalid numbers
+            // Ігноруємо некоректні числа
         }
 
         return filtered;
     }
 
+    /**
+     * Сортує список деривативів згідно з вибраним критерієм.
+     *
+     * @param derivatives список деривативів для сортування
+     */
     private void sortDerivatives(List<Derivative> derivatives) {
         String selectedSort = (String) sortComboBox.getSelectedItem();
         if (selectedSort == null)
@@ -291,24 +315,27 @@ public class DerivativesTab extends AbstractTab {
         }
     }
 
+    /**
+     * Створює картку для відображення деривативу.
+     *
+     * @param derivative дериватив
+     * @return панель-картка деривативу
+     */
     private JPanel createDerivativeCard(Derivative derivative) {
         JPanel card = new JPanel(new BorderLayout());
         card.setOpaque(true);
         card.setBackground(Color.WHITE);
         card.setBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 2, true));
-
-        // Стандартний розмір картки (наприклад, 260x140)
+        card.setName("derivativeCard_" + derivative.getName());
         card.setPreferredSize(new Dimension(260, 140));
         card.setMaximumSize(new Dimension(260, 140));
         card.setMinimumSize(new Dimension(260, 140));
 
-        // Контент з space-between
         JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BorderLayout());
         contentPanel.setOpaque(false);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10)); // знизу 0
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
 
-        // Верхній блок (назва + дата)
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
         topPanel.setOpaque(false);
@@ -324,7 +351,6 @@ public class DerivativesTab extends AbstractTab {
         topPanel.add(nameLabel);
         topPanel.add(dateLabel);
 
-        // Нижній блок (зобов'язання + вартість)
         JPanel bottomPanel = new JPanel();
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
         bottomPanel.setOpaque(false);
@@ -345,7 +371,6 @@ public class DerivativesTab extends AbstractTab {
 
         card.add(contentPanel, BorderLayout.CENTER);
 
-        // Hover effect: border стає чорно-синім
         card.addMouseListener(new MouseAdapter() {
             Color defaultBorder = new Color(180, 180, 180);
             Color hoverBorder = new Color(30, 60, 180);
@@ -373,10 +398,14 @@ public class DerivativesTab extends AbstractTab {
         return card;
     }
 
+    /**
+     * Відкриває вкладку з деталями деривативу, якщо вона ще не відкрита.
+     *
+     * @param derivative дериватив
+     */
     private void openDerivativeTab(Derivative derivative) {
         logger.info("Відкриття вкладки для деривативу: {}", derivative.getName());
 
-        // Check if tab already exists
         for (int i = 0; i < mainTabbedPane.getTabCount(); i++) {
             if (mainTabbedPane.getTitleAt(i).equals(derivative.getName())) {
                 mainTabbedPane.setSelectedIndex(i);
@@ -384,10 +413,9 @@ public class DerivativesTab extends AbstractTab {
             }
         }
 
-        // Create new tab
         DerivativeDetailsTab detailsTab = new DerivativeDetailsTab(mainTabbedPane, derivative);
+        detailsTab.setName("detailsTab_" + derivative.getName());
 
-        // Create closeable tab
         JPanel tabTitlePanel = new JPanel(new BorderLayout());
         tabTitlePanel.setOpaque(false);
 
@@ -399,7 +427,8 @@ public class DerivativesTab extends AbstractTab {
         closeButton.setBorderPainted(false);
         closeButton.setContentAreaFilled(false);
         closeButton.setFocusPainted(false);
-        closeButton.addActionListener(_ -> {
+        closeButton.setName("detailsTab_" + derivative.getName() + "_closeButton");
+        closeButton.addActionListener(e -> {
             int index = mainTabbedPane.indexOfComponent(detailsTab);
             if (index != -1) {
                 mainTabbedPane.remove(index);
@@ -409,12 +438,14 @@ public class DerivativesTab extends AbstractTab {
         tabTitlePanel.add(titleLabel, BorderLayout.CENTER);
         tabTitlePanel.add(closeButton, BorderLayout.EAST);
 
-        // Add tab
         mainTabbedPane.addTab(derivative.getName(), detailsTab);
         mainTabbedPane.setTabComponentAt(mainTabbedPane.getTabCount() - 1, tabTitlePanel);
         mainTabbedPane.setSelectedIndex(mainTabbedPane.getTabCount() - 1);
     }
 
+    /**
+     * Обробник для кнопки "Додати дериватив".
+     */
     private class AddButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -438,6 +469,20 @@ public class DerivativesTab extends AbstractTab {
         }
     }
 
+    /**
+     * Встановлює список деривативів для вкладки (наприклад, для тестування).
+     *
+     * @param allDerivatives список деривативів
+     */
+    public void setAllDerivatives(List<Derivative> allDerivatives) {
+        this.allDerivatives = allDerivatives;
+        updateDerivativesDisplay();
+    }
+
+    /**
+     * Слухач змін у полях пошуку та фільтрів для автоматичного оновлення
+     * відображення.
+     */
     private class SearchDocumentListener implements DocumentListener {
         @Override
         public void insertUpdate(DocumentEvent e) {

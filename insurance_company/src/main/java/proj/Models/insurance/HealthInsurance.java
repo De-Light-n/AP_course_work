@@ -2,6 +2,12 @@ package proj.Models.insurance;
 
 import proj.Models.Risk;
 
+/**
+ * Клас HealthInsurance представляє страхування здоров'я.
+ * Містить додаткові параметри, такі як вік, наявність хронічних хвороб,
+ * ліміт покриття, включення госпіталізації та стоматології.
+ * Додає стандартні ризики для медичного страхування.
+ */
 public class HealthInsurance extends InsuranceObligation {
     private int age;
     private boolean hasPreexistingConditions;
@@ -9,6 +15,18 @@ public class HealthInsurance extends InsuranceObligation {
     private boolean includesHospitalization;
     private boolean includesDentalCare;
 
+    /**
+     * Конструктор для повного створення HealthInsurance.
+     *
+     * @param riskLevel                рівень ризику (0-1)
+     * @param amount                   сума страхування
+     * @param durationMonths           тривалість у місяцях
+     * @param age                      вік застрахованого
+     * @param hasPreexistingConditions чи є хронічні хвороби
+     * @param coverageLimit            ліміт покриття
+     * @param includesHospitalization  чи включає госпіталізацію
+     * @param includesDentalCare       чи включає стоматологію
+     */
     public HealthInsurance(double riskLevel, double amount, int durationMonths,
             int age, boolean hasPreexistingConditions,
             int coverageLimit, boolean includesHospitalization,
@@ -32,6 +50,13 @@ public class HealthInsurance extends InsuranceObligation {
         }
     }
 
+    /**
+     * Конструктор для створення HealthInsurance з мінімальними параметрами.
+     *
+     * @param riskLevel      рівень ризику (0-1)
+     * @param amount         сума страхування
+     * @param durationMonths тривалість у місяцях
+     */
     public HealthInsurance(double riskLevel, double amount, int durationMonths) {
         super(riskLevel, amount, durationMonths);
         setType("HEALTH");
@@ -42,6 +67,11 @@ public class HealthInsurance extends InsuranceObligation {
         this.includesDentalCare = false;
     }
 
+    /**
+     * Конструктор копіювання з InsuranceObligation.
+     *
+     * @param other інший об'єкт InsuranceObligation
+     */
     public HealthInsurance(InsuranceObligation other) {
         super(other);
         setType("HEALTH");
@@ -52,6 +82,11 @@ public class HealthInsurance extends InsuranceObligation {
         this.includesDentalCare = false;
     }
 
+    /**
+     * Обчислює вартість страхування з урахуванням параметрів та ризиків.
+     *
+     * @return розрахована вартість
+     */
     @Override
     public double calculateValue() {
         double baseValue = getAmount() * (1 + getRiskLevel() * 0.05);
@@ -85,6 +120,13 @@ public class HealthInsurance extends InsuranceObligation {
         return baseValue;
     }
 
+    /**
+     * Валідація віку.
+     *
+     * @param age вік
+     * @return валідний вік
+     * @throws IllegalArgumentException якщо вік некоректний
+     */
     private int validateAge(int age) {
         if (age <= 0) {
             throw new IllegalArgumentException("Age must be positive");
@@ -93,42 +135,83 @@ public class HealthInsurance extends InsuranceObligation {
     }
 
     // Гетери та сетери
+
+    /**
+     * @return вік застрахованого
+     */
     public int getAge() {
         return age;
     }
 
+    /**
+     * @return чи є хронічні хвороби
+     */
     public boolean hasPreexistingConditions() {
         return hasPreexistingConditions;
     }
 
+    /**
+     * @return ліміт покриття
+     */
     public int getCoverageLimit() {
         return coverageLimit;
     }
 
+    /**
+     * @return чи включає госпіталізацію
+     */
     public boolean includesHospitalization() {
         return includesHospitalization;
     }
 
+    /**
+     * @return чи включає стоматологію
+     */
     public boolean includesDentalCare() {
         return includesDentalCare;
     }
 
+    /**
+     * Встановлює вік.
+     *
+     * @param age вік
+     */
     public void setAge(int age) {
         this.age = validateAge(age);
     }
 
+    /**
+     * Встановлює наявність хронічних хвороб.
+     *
+     * @param hasPreexistingConditions чи є хронічні хвороби
+     */
     public void setHasPreexistingConditions(boolean hasPreexistingConditions) {
         this.hasPreexistingConditions = hasPreexistingConditions;
     }
 
+    /**
+     * Встановлює ліміт покриття.
+     *
+     * @param coverageLimit ліміт покриття
+     */
     public void setCoverageLimit(int coverageLimit) {
         this.coverageLimit = coverageLimit;
     }
 
+    /**
+     * Встановлює включення госпіталізації.
+     *
+     * @param includesHospitalization чи включає госпіталізацію
+     */
     public void setIncludesHospitalization(boolean includesHospitalization) {
         this.includesHospitalization = includesHospitalization;
     }
 
+    /**
+     * Встановлює включення стоматології.
+     *
+     * @param includesDentalCare чи включає стоматологію
+     */
     public void setIncludesDentalCare(boolean includesDentalCare) {
         this.includesDentalCare = includesDentalCare;
     }

@@ -10,10 +10,14 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 
-public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
+/**
+ * Діалог для додавання нового страхового зобов'язання до деривативу.
+ * Дозволяє вибрати тип зобов'язання, ввести основні та специфічні параметри,
+ * та зберегти зобов'язання у відповідний дериватив.
+ */
+public class AddObligationToDerivativeDialog extends BaseDialog {
     private static final Logger logger = LogManager.getLogger(AddObligationToDerivativeDialog.class);
 
     private InsuranceObligation obligation;
@@ -25,8 +29,15 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
     private JTextField riskLevelField, amountField, durationField;
     private JTextField policyNumberField, notesField;
 
+    /**
+     * Створює діалог для додавання зобов'язання до деривативу.
+     *
+     * @param parent     батьківське вікно
+     * @param derivative дериватив, до якого додається зобов'язання
+     */
     public AddObligationToDerivativeDialog(JFrame parent, Derivative derivative) {
         super(parent, "Додати зобов'язання до деривативу");
+        setName("addObligationDialog");
         this.derivative = derivative;
         logger.info("Ініціалізація діалогу для додавання зобов'язання до деривативу: {}", derivative.getName());
         initializeUI();
@@ -36,48 +47,49 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
 
     private void initializeUI() {
         logger.debug("Ініціалізація інтерфейсу користувача для діалогу");
-        // Obligation type selection
         JPanel typePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         typePanel.add(new JLabel("Тип зобов'язання:"));
         obligationType = new JComboBox<>(new String[] { "HealthInsurance", "LifeInsurance", "PropertyInsurance" });
         obligationType.addActionListener(this::updateDetailsPanel);
         typePanel.add(obligationType);
 
-        // Common fields panel
         JPanel commonFieldsPanel = new JPanel(new GridLayout(0, 2, 5, 5));
         commonFieldsPanel.setBorder(BorderFactory.createTitledBorder("Основні параметри"));
 
         commonFieldsPanel.add(new JLabel("Рівень ризику (0-1):"));
         riskLevelField = new JTextField();
+        riskLevelField.setName("riskLevelField");
         commonFieldsPanel.add(riskLevelField);
 
         commonFieldsPanel.add(new JLabel("Сума страхування:"));
         amountField = new JTextField();
+        amountField.setName("amountField");
         commonFieldsPanel.add(amountField);
 
         commonFieldsPanel.add(new JLabel("Тривалість (місяці):"));
         durationField = new JTextField();
+        durationField.setName("durationField");
         commonFieldsPanel.add(durationField);
 
         commonFieldsPanel.add(new JLabel("Номер поліса:"));
         policyNumberField = new JTextField();
+        policyNumberField.setName("policyNumberField");
         commonFieldsPanel.add(policyNumberField);
 
         commonFieldsPanel.add(new JLabel("Примітки:"));
         notesField = new JTextField();
+        notesField.setName("notesField");
         commonFieldsPanel.add(notesField);
 
-        // Details panel (will be updated based on selection)
         detailsPanel = new JPanel();
+        detailsPanel.setName("detailsPanel");
         detailsPanel.setBorder(BorderFactory.createTitledBorder("Специфічні параметри"));
         updateDetailsPanel(null);
 
-        // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         initializeButtons(buttonPanel);
         applyCommonButtonStyles();
 
-        // Main panel with scroll
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.add(typePanel);
@@ -87,11 +99,16 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
         JScrollPane scrollPane = new JScrollPane(mainPanel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        // Add components
         add(scrollPane, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
+    /**
+     * Оновлює панель специфічних параметрів відповідно до вибраного типу
+     * зобов'язання.
+     *
+     * @param e подія вибору типу
+     */
     private void updateDetailsPanel(ActionEvent e) {
         detailsPanel.removeAll();
         String selectedType = (String) obligationType.getSelectedItem();
@@ -118,10 +135,19 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
         detailsPanel.setLayout(new GridLayout(0, 2, 5, 5));
 
         JTextField ageField = new JTextField();
+        ageField.setName("ageField");
+
         JCheckBox preexistingConditionsCheck = new JCheckBox();
+        preexistingConditionsCheck.setName("preexistingConditionsCheck");
+
         JTextField coverageLimitField = new JTextField();
+        coverageLimitField.setName("coverageLimitField");
+
         JCheckBox hospitalizationCheck = new JCheckBox();
+        hospitalizationCheck.setName("hospitalizationCheck");
+
         JCheckBox dentalCareCheck = new JCheckBox();
+        dentalCareCheck.setName("dentalCareCheck");
 
         detailsPanel.add(new JLabel("Вік:"));
         detailsPanel.add(ageField);
@@ -139,8 +165,13 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
         detailsPanel.setLayout(new GridLayout(0, 2, 5, 5));
 
         JTextField beneficiaryField = new JTextField();
+        beneficiaryField.setName("beneficiaryField");
+
         JCheckBox criticalIllnessCheck = new JCheckBox();
+        criticalIllnessCheck.setName("criticalIllnessCheck");
+
         JCheckBox accidentalDeathCheck = new JCheckBox();
+        accidentalDeathCheck.setName("accidentalDeathCheck");
 
         detailsPanel.add(new JLabel("Бенефіціар:"));
         detailsPanel.add(beneficiaryField);
@@ -154,11 +185,20 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
         detailsPanel.setLayout(new GridLayout(0, 2, 5, 5));
 
         JTextField locationField = new JTextField();
+        locationField.setName("locationField");
+
         JTextField propertyValueField = new JTextField();
+        propertyValueField.setName("propertyValueField");
+
         JCheckBox highRiskAreaCheck = new JCheckBox();
+        highRiskAreaCheck.setName("highRiskAreaCheck");
+
         JComboBox<String> propertyTypeCombo = new JComboBox<>(
                 PropertyInsurance.VALID_PROPERTY_TYPES.toArray(new String[0]));
+        propertyTypeCombo.setName("propertyTypeCombo");
+
         JCheckBox naturalDisastersCheck = new JCheckBox();
+        naturalDisastersCheck.setName("naturalDisastersCheck");
 
         detailsPanel.add(new JLabel("Місцезнаходження:"));
         detailsPanel.add(locationField);
@@ -172,20 +212,23 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
         detailsPanel.add(naturalDisastersCheck);
     }
 
+    /**
+     * Обробляє дію збереження зобов'язання.
+     *
+     * @param e подія натискання кнопки збереження
+     */
     @Override
     protected void saveAction(ActionEvent e) {
         try {
             logger.info("Збереження зобов'язання для деривативу: {}", derivative.getName());
             String selectedType = (String) obligationType.getSelectedItem();
 
-            // Парсимо загальні поля
             double riskLevel = Double.parseDouble(riskLevelField.getText());
             double amount = Double.parseDouble(amountField.getText());
             int duration = Integer.parseInt(durationField.getText());
             String policyNumber = policyNumberField.getText().isEmpty() ? null : policyNumberField.getText();
             String notes = notesField.getText().isEmpty() ? null : notesField.getText();
 
-            // Створюємо конкретне страхування
             switch (selectedType) {
                 case "HealthInsurance":
                     obligation = createHealthInsurance(riskLevel, amount, duration);
@@ -198,7 +241,6 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
                     break;
             }
 
-            // Встановлюємо загальні поля
             if (policyNumber != null)
                 obligation.setPolicyNumber(policyNumber);
             if (notes != null)
@@ -207,27 +249,16 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
             obligation.setStartDate(LocalDateTime.now());
             obligation.setEndDate(LocalDateTime.now().plusMonths(duration));
 
-            // Зберігаємо страхування та додаємо його до деривативи
             repository.save(obligation, derivative);
             logger.info("Зобов'язання успішно збережено та додано до деривативи");
 
             saved = true;
             dispose();
-        } catch (NumberFormatException ex) {
-            logger.error("Помилка парсингу числових значень: {}", ex.getMessage(), ex);
+        } catch (Exception ex) {
+            logger.error("Помилка : {}", ex.getMessage(), ex);
             JOptionPane.showMessageDialog(this,
-                    "Будь ласка, введіть коректні числові значення",
-                    "Помилка вводу", JOptionPane.ERROR_MESSAGE);
-        } catch (SQLException ex) {
-            logger.error("Помилка при збереженні зобов'язання в базу даних: {}", ex.getMessage(), ex);
-            JOptionPane.showMessageDialog(this,
-                    "Помилка при збереженні зобов'язання: " + ex.getMessage(),
-                    "Помилка бази даних", JOptionPane.ERROR_MESSAGE);
-        } catch (IllegalArgumentException ex) {
-            logger.error("Помилка валідації зобов'язання: {}", ex.getMessage(), ex);
-            JOptionPane.showMessageDialog(this,
-                    ex.getMessage(),
-                    "Помилка валідації", JOptionPane.ERROR_MESSAGE);
+                    "Будь ласка, перевірте правильність введених даних.",
+                    "Помилка", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -273,6 +304,11 @@ public class AddObligationToDerivativeDialog extends BaseDerivativeDialog {
                 naturalDisasters);
     }
 
+    /**
+     * Повертає створене зобов'язання.
+     *
+     * @return страхове зобов'язання
+     */
     public InsuranceObligation getObligation() {
         return obligation;
     }

@@ -6,6 +6,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
+/**
+ * Клас Derivative представляє страховий дериватив, який містить набір страхових
+ * зобов'язань.
+ * Містить інформацію про назву, список зобов'язань, загальну вартість, дати
+ * створення та оновлення.
+ */
 public class Derivative {
     private int id;
     private String name;
@@ -14,6 +20,11 @@ public class Derivative {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /**
+     * Створює новий дериватив з вказаною назвою.
+     *
+     * @param name назва деривативу
+     */
     public Derivative(String name) {
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.obligations = new ArrayList<>();
@@ -21,7 +32,6 @@ public class Derivative {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Гетери та сетери
     public int getId() {
         return id;
     }
@@ -40,10 +50,20 @@ public class Derivative {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Повертає список страхових зобов'язань (тільки для читання).
+     *
+     * @return список зобов'язань
+     */
     public List<InsuranceObligation> getObligations() {
         return Collections.unmodifiableList(obligations);
     }
 
+    /**
+     * Встановлює список страхових зобов'язань.
+     *
+     * @param obligations список зобов'язань
+     */
     public void setObligations(List<InsuranceObligation> obligations) {
         this.obligations = Objects.requireNonNull(obligations, "Obligations cannot be null");
         updateDerivative();
@@ -74,25 +94,47 @@ public class Derivative {
         this.updatedAt = Objects.requireNonNull(updatedAt, "UpdatedAt cannot be null");
     }
 
-    // Основні методи
+    /**
+     * Додає страхове зобов'язання до деривативу.
+     *
+     * @param obligation страхове зобов'язання
+     */
     public void addObligation(InsuranceObligation obligation) {
         if (!obligations.contains(obligation)) {
             obligations.add(obligation);
-            totalValue += obligation.calculateValue(); // Викликати calculateValue() замість getCalculatedValue()
+            totalValue += obligation.calculateValue();
             this.updatedAt = LocalDateTime.now();
         }
     }
 
+    /**
+     * Видаляє страхове зобов'язання з деривативу.
+     *
+     * @param obligation страхове зобов'язання
+     */
     public void removeObligation(InsuranceObligation obligation) {
         obligations.remove(obligation);
         updateDerivative();
     }
 
+    /**
+     * Сортує зобов'язання за рівнем ризику (від більшого до меншого).
+     */
     public void sortByRiskLevel() {
         obligations.sort((o1, o2) -> Double.compare(o2.getRiskLevel(), o1.getRiskLevel()));
         this.updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Повертає список зобов'язань, що відповідають заданим діапазонам ризику та
+     * суми.
+     *
+     * @param minRisk   мінімальний рівень ризику
+     * @param maxRisk   максимальний рівень ризику
+     * @param minAmount мінімальна сума
+     * @param maxAmount максимальна сума
+     * @return список зобов'язань у діапазоні
+     */
     public List<InsuranceObligation> findObligationsInRange(double minRisk, double maxRisk,
             double minAmount, double maxAmount) {
         return obligations.stream()
@@ -101,6 +143,11 @@ public class Derivative {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Повертає кількість ризиків за категоріями серед усіх зобов'язань.
+     *
+     * @return мапа категорій ризиків та їх кількості
+     */
     public Map<Risk.RiskCategory, Long> countRisksByCategory() {
         return obligations.stream()
                 .flatMap(o -> o.getCoveredRisks().stream())
@@ -109,6 +156,11 @@ public class Derivative {
                         Collectors.counting()));
     }
 
+    /**
+     * Обчислює середній рівень ризику серед усіх зобов'язань.
+     *
+     * @return середній рівень ризику
+     */
     public double calculateAverageRisk() {
         return obligations.stream()
                 .mapToDouble(InsuranceObligation::getRiskLevel)
@@ -116,6 +168,11 @@ public class Derivative {
                 .orElse(0.0);
     }
 
+    /**
+     * Повертає кількість зобов'язань за типом.
+     *
+     * @return мапа типів зобов'язань та їх кількості
+     */
     public Map<String, Long> countObligationsByType() {
         return obligations.stream()
                 .collect(Collectors.groupingBy(
@@ -123,12 +180,20 @@ public class Derivative {
                         Collectors.counting()));
     }
 
+    /**
+     * Повертає список активних зобов'язань.
+     *
+     * @return список активних зобов'язань
+     */
     public List<InsuranceObligation> getActiveObligations() {
         return obligations.stream()
                 .filter(InsuranceObligation::isActive)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Оновлює загальну вартість деривативу та дату оновлення.
+     */
     private void updateDerivative() {
         totalValue = obligations.stream()
                 .mapToDouble(InsuranceObligation::calculateValue)

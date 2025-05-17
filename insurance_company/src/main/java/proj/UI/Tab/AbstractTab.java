@@ -5,8 +5,12 @@ import org.apache.logging.log4j.Logger;
 
 import javax.swing.*;
 import java.awt.*;
-import java.net.URL;
 
+/**
+ * Абстрактний клас вкладки для головного інтерфейсу застосунку.
+ * Містить загальні стилі, кольори, шрифти, а також методи для створення
+ * стилізованих компонентів.
+ */
 public abstract class AbstractTab extends JPanel {
     protected static final Logger logger = LogManager.getLogger(AbstractTab.class);
     public static final Color BACKGROUND_COLOR = new Color(240, 240, 240);
@@ -17,29 +21,28 @@ public abstract class AbstractTab extends JPanel {
 
     protected final JTabbedPane mainTabbedPane;
 
+    /**
+     * Створює вкладку з посиланням на головний JTabbedPane.
+     *
+     * @param mainTabbedPane головна панель вкладок
+     */
     public AbstractTab(JTabbedPane mainTabbedPane) {
         this.mainTabbedPane = mainTabbedPane;
         setLayout(new BorderLayout(DEFAULT_PADDING, DEFAULT_PADDING));
         setBackground(BACKGROUND_COLOR);
     }
 
+    /**
+     * Ініціалізує інтерфейс вкладки.
+     */
     protected abstract void initializeUI();
 
-    protected ImageIcon loadIconResource(String path) {
-        try {
-            URL resourceUrl = getClass().getResource(path);
-            if (resourceUrl != null) {
-                return new ImageIcon(resourceUrl);
-            } else {
-                logger.warn("Не вдалося знайти ресурс: {}", path);
-                return null;
-            }
-        } catch (Exception e) {
-            logger.warn("Помилка завантаження ресурсу: {}", path, e);
-            return null;
-        }
-    }
-
+    /**
+     * Створює стилізовану кнопку для вкладки.
+     *
+     * @param text текст кнопки
+     * @return стилізована кнопка
+     */
     protected JButton createStyledButton(String text) {
         JButton button = new JButton(text) {
             @Override
@@ -74,86 +77,40 @@ public abstract class AbstractTab extends JPanel {
         return button;
     }
 
-    protected JTextField createStyledTextField(int columns) {
-        JTextField textField = new JTextField(columns) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                if (!isOpaque() && getBorder() instanceof RoundedBorder) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setColor(getBackground());
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                    g2.dispose();
-                }
-                super.paintComponent(g);
-            }
-        };
-        textField.setOpaque(false);
-        textField.setBorder(new RoundedBorder(9));
-        textField.setBackground(Color.WHITE);
-        textField.setFont(DEFAULT_FONT);
-        textField.setMargin(new Insets(4, 8, 4, 8));
-        textField.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override
-            public void focusGained(java.awt.event.FocusEvent e) {
-                textField.setBorder(new RoundedBorder(9, PRIMARY_COLOR));
-            }
-
-            @Override
-            public void focusLost(java.awt.event.FocusEvent e) {
-                textField.setBorder(new RoundedBorder(9));
-            }
-        });
-        return textField;
-    }
-
-    protected JTextArea createStyledTextArea(int rows, int columns) {
-        JTextArea textArea = new JTextArea(rows, columns) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                if (!isOpaque() && getBorder() instanceof RoundedBorder) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setColor(getBackground());
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                    g2.dispose();
-                }
-                super.paintComponent(g);
-            }
-        };
-        textArea.setOpaque(false);
-        textArea.setBorder(new RoundedBorder(9));
-        textArea.setBackground(Color.WHITE);
-        textArea.setFont(DEFAULT_FONT);
-        textArea.setMargin(new Insets(4, 8, 4, 8));
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-        textArea.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override
-            public void focusGained(java.awt.event.FocusEvent e) {
-                textArea.setBorder(new RoundedBorder(9, PRIMARY_COLOR));
-            }
-
-            @Override
-            public void focusLost(java.awt.event.FocusEvent e) {
-                textArea.setBorder(new RoundedBorder(9));
-            }
-        });
-        return textArea;
-    }
-
+    /**
+     * Відображає діалог помилки з заданим повідомленням.
+     *
+     * @param message текст повідомлення
+     */
     protected void showErrorDialog(String message) {
-        JOptionPane.showMessageDialog(this, 
-            message, 
-            "Помилка", 
-            JOptionPane.ERROR_MESSAGE);
+        JOptionPane pane = new JOptionPane(
+                message,
+                JOptionPane.ERROR_MESSAGE);
+        JDialog dialog = pane.createDialog(this, "Помилка");
+        dialog.setName("errorDialog");
+        dialog.setVisible(true);
     }
 
+    /**
+     * Відображає діалог успіху з заданим повідомленням.
+     *
+     * @param message текст повідомлення
+     */
     protected void showSuccessDialog(String message) {
-        JOptionPane.showMessageDialog(this, 
-            message, 
-            "Успіх", 
-            JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane pane = new JOptionPane(
+                message,
+                JOptionPane.INFORMATION_MESSAGE);
+        JDialog dialog = pane.createDialog(this, "Успіх");
+        dialog.setName("successDialog");
+        dialog.setVisible(true);
     }
 
+    /**
+     * Створює стилізоване текстове поле.
+     *
+     * @param columns кількість колонок
+     * @return стилізоване текстове поле
+     */
     protected JTextField createFancyTextField(int columns) {
         JTextField field = new JTextField(columns) {
             @Override
@@ -186,15 +143,28 @@ public abstract class AbstractTab extends JPanel {
         return field;
     }
 
-    // Клас для круглого бордера
+    /**
+     * Клас для круглого бордера компонентів.
+     */
     static class RoundedBorder implements javax.swing.border.Border {
         private final int radius;
         private final Color focusColor;
 
+        /**
+         * Створює бордер із заданим радіусом та стандартним кольором.
+         *
+         * @param radius радіус округлення
+         */
         public RoundedBorder(int radius) {
             this(radius, new Color(180, 180, 180));
         }
 
+        /**
+         * Створює бордер із заданим радіусом та кольором.
+         *
+         * @param radius     радіус округлення
+         * @param focusColor колір бордера
+         */
         public RoundedBorder(int radius, Color focusColor) {
             this.radius = radius;
             this.focusColor = focusColor;

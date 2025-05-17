@@ -9,17 +9,23 @@ import org.apache.logging.log4j.Logger;
 import javax.swing.*;
 
 /**
- * Головний клас програми страхування з інтеграцією деривативів
+ * Головний клас програми страхування з інтеграцією деривативів.
+ * Відповідає за ініціалізацію бази даних, створення головного вікна та вкладок,
+ * а також за коректне завершення роботи програми.
  */
 public class InsuranceApp extends JFrame {
 
     private static final Logger logger = LogManager.getLogger(InsuranceApp.class);
     private static DatabaseManager dbManager;
 
+    /**
+     * Конструктор головного вікна програми.
+     * Ініціалізує базу даних, створює вкладки та налаштовує основні параметри
+     * вікна.
+     */
     public InsuranceApp() {
         logger.info("Ініціалізація головного вікна InsuranceApp");
 
-        // Ініціалізація бази даних
         try {
             logger.debug("Спроба отримати екземпляр DatabaseManager...");
             dbManager = DatabaseManager.getInstance();
@@ -44,7 +50,6 @@ public class InsuranceApp extends JFrame {
 
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        // Додаємо вкладки
         try {
             logger.info("Додавання вкладки 'Деривативи'");
             tabbedPane.addTab("Деривативи", new DerivativesTab(tabbedPane));
@@ -61,6 +66,13 @@ public class InsuranceApp extends JFrame {
         logger.info("Головне вікно InsuranceApp ініціалізовано");
     }
 
+    /**
+     * Точка входу в програму.
+     * Запускає головне вікно та додає shutdown hook для коректного закриття
+     * підключення до БД.
+     *
+     * @param args аргументи командного рядка
+     */
     public static void main(String[] args) {
         logger.info("Запуск програми InsuranceApp");
 
@@ -77,7 +89,6 @@ public class InsuranceApp extends JFrame {
             }
         });
 
-        // Додаємо shutdown hook для коректного закриття підключення до БД
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 if (dbManager != null) {

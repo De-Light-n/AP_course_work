@@ -10,22 +10,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Репозиторій для роботи з деривативами у базі даних.
+ * Забезпечує CRUD-операції, пошук, збереження та видалення деривативів,
+ * а також завантаження та оновлення пов'язаних страхових зобов'язань.
+ */
 public class DerivativeRepository {
     private final DatabaseManager dbManager;
-    private InsuranceObligationRepository obligationRepository; // Лінива ініціалізація
+    private InsuranceObligationRepository obligationRepository;
 
+    /**
+     * Створює новий репозиторій деривативів.
+     */
     public DerivativeRepository() {
         this.dbManager = DatabaseManager.getInstance();
     }
 
     private InsuranceObligationRepository getObligationRepository() {
         if (obligationRepository == null) {
-            obligationRepository = new InsuranceObligationRepository(); // Ініціалізуємо лише при потребі
+            obligationRepository = new InsuranceObligationRepository();
         }
         return obligationRepository;
     }
 
-    // Save a derivative to the database
+    /**
+     * Зберігає дериватив у базі даних.
+     * Якщо дериватив новий — створює, інакше оновлює.
+     *
+     * @param derivative дериватив
+     * @return збережений дериватив
+     * @throws SQLException у разі помилки БД
+     */
     public Derivative save(Derivative derivative) throws SQLException {
         if (derivative.getId() == 0) {
             return insert(derivative);
@@ -78,7 +93,13 @@ public class DerivativeRepository {
         throw new SQLException("Failed to update derivative");
     }
 
-    // Find a derivative by ID
+    /**
+     * Повертає дериватив за ідентифікатором.
+     *
+     * @param id ідентифікатор деривативу
+     * @return Optional з деривативом, якщо знайдено
+     * @throws SQLException у разі помилки БД
+     */
     public Optional<Derivative> findById(int id) throws SQLException {
         String sql = "SELECT * FROM derivatives WHERE id = ?";
 
@@ -98,7 +119,12 @@ public class DerivativeRepository {
         return Optional.empty();
     }
 
-    // Find all derivatives
+    /**
+     * Повертає всі деривативи з бази даних.
+     *
+     * @return список деривативів
+     * @throws SQLException у разі помилки БД
+     */
     public List<Derivative> findAll() throws SQLException {
         String sql = "SELECT * FROM derivatives";
         List<Derivative> derivatives = new ArrayList<>();
@@ -116,9 +142,14 @@ public class DerivativeRepository {
         return derivatives;
     }
 
-    // Delete a derivative
+    /**
+     * Видаляє дериватив за ідентифікатором.
+     *
+     * @param id ідентифікатор деривативу
+     * @return true, якщо видалено
+     * @throws SQLException у разі помилки БД
+     */
     public boolean delete(int id) throws SQLException {
-        // First delete the derivative-obligation relationships
         String deleteRelationsSql = "DELETE FROM derivative_obligations WHERE derivative_id = ?";
         try (Connection conn = dbManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(deleteRelationsSql)) {
@@ -126,7 +157,6 @@ public class DerivativeRepository {
             stmt.executeUpdate();
         }
 
-        // Then delete the derivative itself
         String sql = "DELETE FROM derivatives WHERE id = ?";
         try (Connection conn = dbManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -135,7 +165,6 @@ public class DerivativeRepository {
         }
     }
 
-    // Helper methods
     private Derivative mapDerivativeFromResultSet(ResultSet rs) throws SQLException {
         Derivative derivative = new Derivative(rs.getString("name"));
         derivative.setId(rs.getInt("id"));
@@ -145,7 +174,6 @@ public class DerivativeRepository {
         return derivative;
     }
 
-    // Work with obligations
     private void saveObligations(Derivative derivative) throws SQLException {
         String sql = "INSERT INTO derivative_obligations (derivative_id, obligation_id) VALUES (?, ?)";
 
@@ -153,12 +181,9 @@ public class DerivativeRepository {
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             for (InsuranceObligation obligation : derivative.getObligations()) {
-                // Зберігаємо страхування, якщо воно нове
                 if (obligation.getId() == 0) {
                     getObligationRepository().save(obligation);
                 }
-
-                // Створюємо зв'язок між деривативою та страхуванням
                 stmt.setInt(1, derivative.getId());
                 stmt.setInt(2, obligation.getId());
                 stmt.addBatch();
@@ -168,15 +193,12 @@ public class DerivativeRepository {
     }
 
     private void updateObligations(Derivative derivative) throws SQLException {
-        // First delete all existing relationships
         String deleteSql = "DELETE FROM derivative_obligations WHERE derivative_id = ?";
         try (Connection conn = dbManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
             stmt.setInt(1, derivative.getId());
             stmt.executeUpdate();
         }
-
-        // Then add the current ones
         saveObligations(derivative);
     }
 
@@ -198,12 +220,16 @@ public class DerivativeRepository {
                 }
             }
         }
-
-        // Замінюємо існуючу колекцію на нову
         derivative.setObligations(obligations);
     }
 
-    // Additional useful methods
+    /**
+     * Повертає список деривативів за частковою назвою.
+     *
+     * @param name частина назви
+     * @return список деривативів
+     * @throws SQLException у разі помилки БД
+     */
     public List<Derivative> findByName(String name) throws SQLException {
         String sql = "SELECT * FROM derivatives WHERE name LIKE ?";
         List<Derivative> derivatives = new ArrayList<>();
@@ -224,6 +250,14 @@ public class DerivativeRepository {
         return derivatives;
     }
 
+    /**
+     * Повертає список деривативів у заданому діапазоні загальної вартості.
+     *
+     * @param minValue мінімальна вартість
+     * @param maxValue максимальна вартість
+     * @return список деривативів
+     * @throws SQLException у разі помилки БД
+     */
     public List<Derivative> findByTotalValueRange(double minValue, double maxValue) throws SQLException {
         String sql = "SELECT * FROM derivatives WHERE total_value BETWEEN ? AND ?";
         List<Derivative> derivatives = new ArrayList<>();

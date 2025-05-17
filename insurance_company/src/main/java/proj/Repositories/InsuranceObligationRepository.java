@@ -19,6 +19,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 
+/**
+ * Репозиторій для роботи зі страховими зобов'язаннями у базі даних.
+ * Забезпечує CRUD-операції, пошук, збереження, видалення, а також роботу з
+ * ризиками та специфічними типами зобов'язань.
+ */
 public class InsuranceObligationRepository {
     private static final Logger logger = LogManager.getLogger(InsuranceObligationRepository.class);
 
@@ -38,7 +43,14 @@ public class InsuranceObligationRepository {
         return derivativeRepository;
     }
 
-    // Збереження зобов'язання в базу даних
+    /**
+     * Зберігає зобов'язання у базі даних.
+     * Якщо зобов'язання нове — створює, інакше оновлює.
+     *
+     * @param obligation зобов'язання
+     * @return збережене зобов'язання
+     * @throws SQLException у разі помилки БД
+     */
     public InsuranceObligation save(InsuranceObligation obligation) throws SQLException {
         logger.info("Збереження зобов'язання: {}", obligation.getPolicyNumber());
         if (obligation.getId() == 0) {
@@ -48,6 +60,14 @@ public class InsuranceObligationRepository {
         }
     }
 
+    /**
+     * Зберігає зобов'язання та додає його до деривативу.
+     *
+     * @param obligation зобов'язання
+     * @param derivative дериватив
+     * @return збережене зобов'язання
+     * @throws SQLException у разі помилки БД
+     */
     public InsuranceObligation save(InsuranceObligation obligation, Derivative derivative) throws SQLException {
         logger.info("Збереження зобов'язання {} для деривативи {}", obligation.getPolicyNumber(), derivative.getName());
         InsuranceObligation savedObligation = save(obligation);
@@ -107,7 +127,13 @@ public class InsuranceObligationRepository {
         throw new SQLException("Failed to update insurance obligation");
     }
 
-    // Отримання зобов'язання за ID
+    /**
+     * Повертає зобов'язання за ідентифікатором.
+     *
+     * @param id ідентифікатор зобов'язання
+     * @return Optional з об'єктом зобов'язання, якщо знайдено
+     * @throws SQLException у разі помилки БД
+     */
     public Optional<InsuranceObligation> findById(int id) throws SQLException {
         logger.debug("Пошук зобов'язання за ID: {}", id);
         String sql = "SELECT * FROM insurance_obligations WHERE id = ?";
@@ -131,7 +157,12 @@ public class InsuranceObligationRepository {
         return Optional.empty();
     }
 
-    // Отримання всіх зобов'язань
+    /**
+     * Повертає всі зобов'язання з бази даних.
+     *
+     * @return список зобов'язань
+     * @throws SQLException у разі помилки БД
+     */
     public List<InsuranceObligation> findAll() throws SQLException {
         String sql = "SELECT * FROM insurance_obligations";
         List<InsuranceObligation> obligations = new ArrayList<>();
@@ -150,7 +181,13 @@ public class InsuranceObligationRepository {
         return obligations;
     }
 
-    // Видалення зобов'язання
+    /**
+     * Видаляє зобов'язання за ідентифікатором.
+     *
+     * @param id ідентифікатор зобов'язання
+     * @return true, якщо видалено
+     * @throws SQLException у разі помилки БД
+     */
     public boolean delete(int id) throws SQLException {
         logger.debug("Видалення зобов'язання з ID: {}", id);
         String sql = "DELETE FROM insurance_obligations WHERE id = ?";
@@ -169,7 +206,13 @@ public class InsuranceObligationRepository {
         }
     }
 
-    // Пошук за статусом
+    /**
+     * Повертає список зобов'язань за статусом.
+     *
+     * @param status статус зобов'язання
+     * @return список зобов'язань
+     * @throws SQLException у разі помилки БД
+     */
     public List<InsuranceObligation> findByStatus(ObligationStatus status) throws SQLException {
         String sql = "SELECT * FROM insurance_obligations WHERE status = ?";
         List<InsuranceObligation> obligations = new ArrayList<>();
@@ -191,7 +234,6 @@ public class InsuranceObligationRepository {
         return obligations;
     }
 
-    // Допоміжні методи
     private void setObligationParameters(PreparedStatement stmt, InsuranceObligation obligation)
             throws SQLException {
         stmt.setString(1, obligation.getPolicyNumber());
@@ -209,7 +251,6 @@ public class InsuranceObligationRepository {
     }
 
     private InsuranceObligation mapObligationFromResultSet(ResultSet rs) throws SQLException {
-        // Створюємо анонімний клас із викликом конструктора
         InsuranceObligation obligation = new InsuranceObligation(
                 rs.getDouble("risk_level"),
                 rs.getDouble("amount"),
@@ -249,7 +290,6 @@ public class InsuranceObligationRepository {
         return obligation;
     }
 
-    // Робота з ризиками
     private void saveRisks(InsuranceObligation obligation) throws SQLException {
         logger.debug("Збереження ризиків для зобов'язання з ID: {}", obligation.getId());
         String sql = "INSERT INTO obligation_risks (obligation_id, risk_code) VALUES (?, ?)";
@@ -268,15 +308,12 @@ public class InsuranceObligationRepository {
     }
 
     private void updateRisks(InsuranceObligation obligation) throws SQLException {
-        // Спочатку видаляємо всі існуючі ризики
         String deleteSql = "DELETE FROM obligation_risks WHERE obligation_id = ?";
         try (Connection conn = dbManager.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(deleteSql)) {
             stmt.setInt(1, obligation.getId());
             stmt.executeUpdate();
         }
-
-        // Потім додаємо поточні
         saveRisks(obligation);
     }
 
@@ -308,7 +345,6 @@ public class InsuranceObligationRepository {
         logger.info("Ризики для зобов'язання з ID {} успішно завантажено", obligation.getId());
     }
 
-    // Робота з конкретними типами страхування
     private void saveSpecificTypeData(InsuranceObligation obligation) throws SQLException {
         if (obligation instanceof LifeInsurance) {
             saveLifeInsuranceData((LifeInsurance) obligation);
@@ -347,7 +383,6 @@ public class InsuranceObligationRepository {
         }
     }
 
-    // Методи для LifeInsurance
     private void saveLifeInsuranceData(LifeInsurance lifeInsurance) throws SQLException {
         String sql = "INSERT INTO life_insurance (obligation_id, beneficiary, " +
                 "includes_critical_illness, includes_accidental_death) " +
@@ -401,7 +436,6 @@ public class InsuranceObligationRepository {
         }
     }
 
-    // Методи для HealthInsurance
     private void saveHealthInsuranceData(HealthInsurance healthInsurance) throws SQLException {
         String sql = "INSERT INTO health_insurance (obligation_id, age, has_preexisting_conditions, " +
                 "coverage_limit, includes_hospitalization, includes_dental_care) " +
@@ -461,7 +495,6 @@ public class InsuranceObligationRepository {
         }
     }
 
-    // Методи для PropertyInsurance
     private void savePropertyInsuranceData(PropertyInsurance propertyInsurance) throws SQLException {
         String sql = "INSERT INTO property_insurance (obligation_id, property_location, " +
                 "property_value, is_high_risk_area, property_type, includes_natural_disasters) " +

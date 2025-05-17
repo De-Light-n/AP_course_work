@@ -21,6 +21,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Вкладка для перегляду та керування деталями деривативи.
+ * Дозволяє переглядати, додавати, видаляти страхові зобов'язання, фільтрувати
+ * та сортувати їх,
+ * а також видаляти саму деривативу.
+ */
 public class DerivativeDetailsTab extends AbstractTab {
     private static final Logger logger = LogManager.getLogger(DerivativeDetailsTab.class);
     private final Derivative derivative;
@@ -31,65 +37,75 @@ public class DerivativeDetailsTab extends AbstractTab {
     private JTextField searchField;
     private JTextField minCalcValueField, maxCalcValueField;
 
+    /**
+     * Створює вкладку деталей для заданої деривативи.
+     *
+     * @param mainTabbedPane головна панель вкладок
+     * @param derivative     дериватива для перегляду та керування
+     */
     public DerivativeDetailsTab(JTabbedPane mainTabbedPane, Derivative derivative) {
         super(mainTabbedPane);
         this.derivative = derivative;
         initializeUI();
     }
 
+    /**
+     * Ініціалізує інтерфейс вкладки.
+     */
     @Override
     protected void initializeUI() {
         logger.info("Ініціалізація вкладки деталей деривативи: {}", derivative.getName());
         setLayout(new BorderLayout());
 
-        // --- Панель кнопок ---
         JPanel buttonPanel = new JPanel(new BorderLayout());
         buttonPanel.setOpaque(false);
 
         JPanel leftButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         leftButtons.setOpaque(false);
         addButton = createStyledButton("Додати страхування");
+        addButton.setName("addButton");
         addButton.addActionListener(new AddButtonListener());
         leftButtons.add(addButton);
 
         deleteButton = createStyledButton("Видалити страхування");
+        deleteButton.setName("deleteButton");
         deleteButton.addActionListener(new DeleteButtonListener());
         leftButtons.add(deleteButton);
 
         buttonPanel.add(leftButtons, BorderLayout.WEST);
 
         JButton removeDerivativeButton = createStyledButton("Видалити директиву");
+        removeDerivativeButton.setName("removeDerivativeButton");
         removeDerivativeButton.addActionListener(new RemoveDerivativeListener());
         JPanel rightButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         rightButtonPanel.setOpaque(false);
         rightButtonPanel.add(removeDerivativeButton);
         buttonPanel.add(rightButtonPanel, BorderLayout.EAST);
 
-        // --- Панель фільтрів та сортування (в колонку) ---
         JPanel filterSortPanel = new JPanel();
         filterSortPanel.setLayout(new BoxLayout(filterSortPanel, BoxLayout.Y_AXIS));
         filterSortPanel.setOpaque(false);
 
-        // Пошук
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         searchPanel.setOpaque(false);
         searchPanel.add(new JLabel("Пошук (за номером полісу, типом, ризиком, сумою, статусом):"));
         searchField = createFancyTextField(15);
+        searchField.setName("searchField");
         searchPanel.add(searchField);
         filterSortPanel.add(searchPanel);
 
-        // Діапазон розрахованої вартості
         JPanel calcValuePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         calcValuePanel.setOpaque(false);
         calcValuePanel.add(new JLabel("Розрах. вартість:"));
         minCalcValueField = createFancyTextField(7);
+        minCalcValueField.setName("minCalcValueField");
         calcValuePanel.add(minCalcValueField);
         calcValuePanel.add(new JLabel("-"));
         maxCalcValueField = createFancyTextField(7);
+        maxCalcValueField.setName("maxCalcValueField");
         calcValuePanel.add(maxCalcValueField);
         filterSortPanel.add(calcValuePanel);
 
-        // Сортування
         JPanel sortPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         sortPanel.setOpaque(false);
         sortPanel.add(new JLabel("Сортувати:"));
@@ -105,11 +121,11 @@ public class DerivativeDetailsTab extends AbstractTab {
                 "Розрах. вартість (спадання)",
                 "Статус"
         });
-        sortOptions.addActionListener(_ -> filterAndSortObligations());
+        sortOptions.setName("sortOptions");
+        sortOptions.addActionListener(e -> filterAndSortObligations());
         sortPanel.add(sortOptions);
         filterSortPanel.add(sortPanel);
 
-        // Об'єднана панель пошуку/фільтрів/сортування
         JPanel searchSortPanel = new JPanel();
         searchSortPanel.setLayout(new BorderLayout());
         searchSortPanel.setOpaque(false);
@@ -117,20 +133,16 @@ public class DerivativeDetailsTab extends AbstractTab {
                 BorderFactory.createLineBorder(new Color(180, 180, 180), 3, true),
                 "Фільтри та інструменти",
                 TitledBorder.LEFT, TitledBorder.TOP,
-                DEFAULT_FONT.deriveFont(Font.BOLD, 13)
-        ));
+                DEFAULT_FONT.deriveFont(Font.BOLD, 13)));
         searchSortPanel.add(buttonPanel, BorderLayout.NORTH);
         searchSortPanel.add(filterSortPanel, BorderLayout.CENTER);
 
-        // --- Зведена панель ---
         JPanel summaryPanel = createSummaryPanel();
 
-        // --- Панель з таблицею зобов'язань ---
         createObligationsTable();
         JScrollPane scrollPane = new JScrollPane(obligationsTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        // Додаємо обводку з назвою "Директиви"
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(180, 180, 180), 3, true),
@@ -140,7 +152,6 @@ public class DerivativeDetailsTab extends AbstractTab {
         tablePanel.setOpaque(false);
         tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        // --- Головна панель вкладки ---
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(120, 120, 180), 4, true),
@@ -155,28 +166,43 @@ public class DerivativeDetailsTab extends AbstractTab {
 
         add(mainPanel, BorderLayout.CENTER);
 
-        // Додаємо фільтрацію та сортування при зміні полів
         DocumentListener filterListener = new DocumentListener() {
             @Override
-            public void insertUpdate(DocumentEvent e) { filterAndSortObligations(); }
+            public void insertUpdate(DocumentEvent e) {
+                filterAndSortObligations();
+            }
+
             @Override
-            public void removeUpdate(DocumentEvent e) { filterAndSortObligations(); }
+            public void removeUpdate(DocumentEvent e) {
+                filterAndSortObligations();
+            }
+
             @Override
-            public void changedUpdate(DocumentEvent e) { filterAndSortObligations(); }
+            public void changedUpdate(DocumentEvent e) {
+                filterAndSortObligations();
+            }
         };
         minCalcValueField.getDocument().addDocumentListener(filterListener);
         maxCalcValueField.getDocument().addDocumentListener(filterListener);
         searchField.getDocument().addDocumentListener(filterListener);
     }
 
+    /**
+     * Створює панель з короткою інформацією про деривативу.
+     *
+     * @return панель з інформацією
+     */
     private JPanel createSummaryPanel() {
         JPanel summaryPanel = new JPanel(new GridLayout(1, 3));
         summaryPanel.setBorder(new TitledBorder("Зведена інформація"));
         summaryPanel.setBackground(BACKGROUND_COLOR);
 
         JLabel totalLabel = new JLabel("Загальна вартість: " + derivative.getTotalValue());
+        totalLabel.setName("totalLabel");
         JLabel countLabel = new JLabel("Кількість зобов'язань: " + derivative.getObligations().size());
+        countLabel.setName("countLabel");
         JLabel avgRiskLabel = new JLabel("Середній ризик: " + derivative.calculateAverageRisk());
+        avgRiskLabel.setName("avgRiskLabel");
 
         Font labelFont = DEFAULT_FONT.deriveFont(Font.BOLD);
         totalLabel.setFont(labelFont);
@@ -190,6 +216,9 @@ public class DerivativeDetailsTab extends AbstractTab {
         return summaryPanel;
     }
 
+    /**
+     * Створює таблицю зобов'язань та додає обробник подій для подвійного кліку.
+     */
     private void createObligationsTable() {
         String[] columnNames = { "Номер полісу", "Тип", "Рівень ризику", "Сума", "Розрахована вартість", "Статус" };
         obligationsModel = new DefaultTableModel(columnNames, 0) {
@@ -200,6 +229,7 @@ public class DerivativeDetailsTab extends AbstractTab {
         };
 
         obligationsTable = new JTable(obligationsModel);
+        obligationsTable.setName("obligationsTable");
         obligationsTable.setFont(DEFAULT_FONT);
 
         obligationsTable.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -207,15 +237,15 @@ public class DerivativeDetailsTab extends AbstractTab {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (e.getClickCount() == 2 && obligationsTable.getSelectedRow() != -1) {
                     int row = obligationsTable.getSelectedRow();
-                    // Отримуємо policyNumber з таблиці (припускаємо, що це перша колонка)
                     Object policyNumberObj = obligationsModel.getValueAt(row, 0);
                     InsuranceObligation selectedObligation = derivative.getObligations().stream()
-                        .filter(o -> String.valueOf(o.getPolicyNumber()).equals(String.valueOf(policyNumberObj)))
-                        .findFirst().orElse(null);
+                            .filter(o -> String.valueOf(o.getPolicyNumber()).equals(String.valueOf(policyNumberObj)))
+                            .findFirst().orElse(null);
                     if (selectedObligation != null) {
                         ObligationDetailsDialog dialog = new ObligationDetailsDialog(
                                 (JFrame) SwingUtilities.getWindowAncestor(DerivativeDetailsTab.this),
                                 selectedObligation);
+                        dialog.setName("obligationDetailsDialog");
                         dialog.setVisible(true);
                         if (dialog.isDataChanged()) {
                             refreshObligationsTable();
@@ -225,10 +255,12 @@ public class DerivativeDetailsTab extends AbstractTab {
             }
         });
 
-        // Populate table with obligations
         refreshObligationsTable();
     }
 
+    /**
+     * Оновлює дані в таблиці зобов'язань.
+     */
     private void refreshObligationsTable() {
         logger.debug("Оновлення таблиці зобов'язань для деривативи: {}", derivative.getName());
         obligationsModel.setRowCount(0);
@@ -245,6 +277,9 @@ public class DerivativeDetailsTab extends AbstractTab {
         }
     }
 
+    /**
+     * Фільтрує та сортує зобов'язання згідно з вибраними параметрами.
+     */
     private void filterAndSortObligations() {
         logger.debug("Фільтрація та сортування зобов'язань для деривативи: {}", derivative.getName());
         String searchText = searchField.getText().toLowerCase();
@@ -270,7 +305,6 @@ public class DerivativeDetailsTab extends AbstractTab {
                     })
                     .collect(Collectors.toList());
 
-            // Сортування
             String sort = (String) sortOptions.getSelectedItem();
             if (sort != null) {
                 switch (sort) {
@@ -310,21 +344,25 @@ public class DerivativeDetailsTab extends AbstractTab {
             filtered = null;
         }
 
-        // Оновити таблицю
         obligationsModel.setRowCount(0);
-        for (InsuranceObligation obligation : filtered) {
-            Object[] rowData = {
-                    obligation.getPolicyNumber(),
-                    obligation.getType(),
-                    obligation.getRiskLevel(),
-                    obligation.getAmount(),
-                    obligation.getCalculatedValue(),
-                    obligation.getStatus()
-            };
-            obligationsModel.addRow(rowData);
+        if (filtered != null) {
+            for (InsuranceObligation obligation : filtered) {
+                Object[] rowData = {
+                        obligation.getPolicyNumber(),
+                        obligation.getType(),
+                        obligation.getRiskLevel(),
+                        obligation.getAmount(),
+                        obligation.getCalculatedValue(),
+                        obligation.getStatus()
+                };
+                obligationsModel.addRow(rowData);
+            }
         }
     }
 
+    /**
+     * Обробник для кнопки "Додати страхування".
+     */
     private class AddButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -343,6 +381,9 @@ public class DerivativeDetailsTab extends AbstractTab {
         }
     }
 
+    /**
+     * Обробник для кнопки "Видалити страхування".
+     */
     private class DeleteButtonListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -350,8 +391,8 @@ public class DerivativeDetailsTab extends AbstractTab {
             if (selectedRow != -1) {
                 Object policyNumberObj = obligationsModel.getValueAt(selectedRow, 0);
                 InsuranceObligation toDelete = derivative.getObligations().stream()
-                    .filter(o -> String.valueOf(o.getPolicyNumber()).equals(String.valueOf(policyNumberObj)))
-                    .findFirst().orElse(null);
+                        .filter(o -> String.valueOf(o.getPolicyNumber()).equals(String.valueOf(policyNumberObj)))
+                        .findFirst().orElse(null);
 
                 if (toDelete != null) {
                     int confirm = JOptionPane.showConfirmDialog(
@@ -362,12 +403,10 @@ public class DerivativeDetailsTab extends AbstractTab {
 
                     if (confirm == JOptionPane.YES_OPTION) {
                         try {
-                            logger.info("Видалення зобов'язання з id={} з деривативи: {}", toDelete.getId(), derivative.getName());
-                            // Видалити з бази
+                            logger.info("Видалення зобов'язання з id={} з деривативи: {}", toDelete.getId(),
+                                    derivative.getName());
                             new InsuranceObligationRepository().delete(toDelete.getId());
-                            // Видалити з деривативи (пам'ять)
                             derivative.removeObligation(toDelete);
-                            // Оновити деривативу в базі (зв'язки)
                             new DerivativeRepository().save(derivative);
                         } catch (Exception ex) {
                             logger.error("Не вдалося видалити зобов'язання: {}", ex.getMessage(), ex);
@@ -384,6 +423,9 @@ public class DerivativeDetailsTab extends AbstractTab {
         }
     }
 
+    /**
+     * Обробник для кнопки "Видалити директиву".
+     */
     private class RemoveDerivativeListener implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {

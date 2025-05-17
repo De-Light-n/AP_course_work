@@ -12,18 +12,48 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Enhanced database manager with connection pooling and migration support
+ * DatabaseManager is a singleton class responsible for managing the database
+ * connection pool
+ * and running database migrations. It uses HikariCP for connection pooling and
+ * Flyway for migrations.
+ * <p>
+ * Usage example:
+ * 
+ * <pre>
+ * DatabaseManager dbManager = DatabaseManager.getInstance();
+ * try (Connection conn = dbManager.getConnection()) {
+ *     // use connection
+ * }
+ * </pre>
+ * </p>
+ * <p>
+ * Configuration is loaded from the db.properties file in the classpath.
+ * </p>
  */
 public class DatabaseManager {
+    /** Logger for this class. */
     private static final Logger logger = LogManager.getLogger(DatabaseManager.class);
+
+    /** Singleton instance of DatabaseManager. */
     private static DatabaseManager instance;
+
+    /** HikariCP data source for connection pooling. */
     private static HikariDataSource dataSource;
 
+    /**
+     * Private constructor to prevent direct instantiation.
+     * Initializes the connection pool and runs migrations.
+     */
     private DatabaseManager() {
         initializeConnectionPool();
         runMigrations();
     }
 
+    /**
+     * Returns the singleton instance of DatabaseManager.
+     *
+     * @return the singleton instance
+     */
     public static synchronized DatabaseManager getInstance() {
         if (instance == null) {
             instance = new DatabaseManager();
@@ -31,6 +61,12 @@ public class DatabaseManager {
         return instance;
     }
 
+    /**
+     * Initializes the HikariCP connection pool using properties from db.properties.
+     *
+     * @throws IllegalStateException if the configuration file is not found or
+     *                               cannot be loaded
+     */
     private void initializeConnectionPool() {
         try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("db.properties")) {
             if (inputStream == null) {
@@ -62,6 +98,9 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Runs Flyway database migrations.
+     */
     private void runMigrations() {
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
@@ -73,19 +112,23 @@ public class DatabaseManager {
         logger.info("Database migrations completed");
     }
 
+    /**
+     * Returns a connection from the connection pool.
+     *
+     * @return a {@link Connection} object
+     * @throws SQLException if a database access error occurs
+     */
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
 
+    /**
+     * Closes the connection pool and releases all resources.
+     */
     public void close() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
             logger.info("Database connection pool closed");
         }
-    }
-
-    @FunctionalInterface
-    public interface TransactionOperation {
-        void execute(Connection conn) throws SQLException;
     }
 }

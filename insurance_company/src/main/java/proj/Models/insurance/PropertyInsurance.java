@@ -5,16 +5,34 @@ import java.util.Objects;
 
 import proj.Models.Risk;
 
+/**
+ * Клас PropertyInsurance представляє страхування майна.
+ * Містить параметри, такі як місцезнаходження, вартість майна, тип майна,
+ * чи знаходиться у зоні підвищеного ризику, та чи включає стихійні лиха.
+ * Додає стандартні ризики для страхування майна.
+ */
 public class PropertyInsurance extends InsuranceObligation {
+    /** Дозволені типи майна. */
     public static final List<String> VALID_PROPERTY_TYPES = List.of("APARTMENT", "HOUSE", "COMMERCIAL");
 
     private String propertyLocation;
     private double propertyValue;
     private boolean isHighRiskArea;
     private String propertyType;
-
     private boolean includesNaturalDisasters;
 
+    /**
+     * Конструктор для повного створення PropertyInsurance.
+     *
+     * @param riskLevel                рівень ризику (0-1)
+     * @param amount                   сума страхування
+     * @param durationMonths           тривалість у місяцях
+     * @param propertyLocation         місцезнаходження майна
+     * @param propertyValue            вартість майна
+     * @param isHighRiskArea           чи знаходиться у зоні підвищеного ризику
+     * @param propertyType             тип майна
+     * @param includesNaturalDisasters чи включає стихійні лиха
+     */
     public PropertyInsurance(double riskLevel, double amount, int durationMonths,
             String propertyLocation, double propertyValue,
             boolean isHighRiskArea, String propertyType,
@@ -27,7 +45,6 @@ public class PropertyInsurance extends InsuranceObligation {
         this.propertyType = validatePropertyType(propertyType);
         this.includesNaturalDisasters = includesNaturalDisasters;
 
-        // Додавання стандартних ризиків
         this.addRisk(new Risk("FIRE01", "Пожежа", "Ризик пожежі", 0.15, Risk.RiskCategory.PROPERTY));
         this.addRisk(new Risk("THFT01", "Крадіжка", "Ризик крадіжки", 0.1, Risk.RiskCategory.PROPERTY));
 
@@ -36,6 +53,13 @@ public class PropertyInsurance extends InsuranceObligation {
         }
     }
 
+    /**
+     * Конструктор для створення PropertyInsurance з мінімальними параметрами.
+     *
+     * @param riskLevel      рівень ризику (0-1)
+     * @param amount         сума страхування
+     * @param durationMonths тривалість у місяцях
+     */
     public PropertyInsurance(double riskLevel, double amount, int durationMonths) {
         super(riskLevel, amount, durationMonths);
         setType("PROPERTY");
@@ -46,6 +70,11 @@ public class PropertyInsurance extends InsuranceObligation {
         this.includesNaturalDisasters = false;
     }
 
+    /**
+     * Конструктор копіювання з InsuranceObligation.
+     *
+     * @param other інший об'єкт InsuranceObligation
+     */
     public PropertyInsurance(InsuranceObligation other) {
         super(other);
         setType("PROPERTY");
@@ -56,6 +85,11 @@ public class PropertyInsurance extends InsuranceObligation {
         this.includesNaturalDisasters = false;
     }
 
+    /**
+     * Обчислює вартість страхування з урахуванням параметрів та ризиків.
+     *
+     * @return розрахована вартість
+     */
     @Override
     public double calculateValue() {
         double baseValue = getAmount() * (1 + getRiskLevel() * 0.03);
@@ -71,13 +105,14 @@ public class PropertyInsurance extends InsuranceObligation {
             case "COMMERCIAL":
                 baseValue *= 1.7;
                 break;
+            default:
+                break;
         }
 
         if (includesNaturalDisasters) {
             baseValue *= 1.4;
         }
 
-        // Врахування ризиків
         double riskFactor = getCoveredRisks().stream()
                 .mapToDouble(Risk::getBaseRiskFactor)
                 .sum();
@@ -87,6 +122,13 @@ public class PropertyInsurance extends InsuranceObligation {
         return baseValue;
     }
 
+    /**
+     * Валідує вартість майна.
+     *
+     * @param value вартість майна
+     * @return валідна вартість
+     * @throws IllegalArgumentException якщо значення некоректне
+     */
     private double validatePropertyValue(double value) {
         if (value < 0) {
             throw new IllegalArgumentException("Property value must be positive");
@@ -94,6 +136,13 @@ public class PropertyInsurance extends InsuranceObligation {
         return value;
     }
 
+    /**
+     * Валідує тип майна.
+     *
+     * @param type тип майна
+     * @return валідний тип майна
+     * @throws IllegalArgumentException якщо тип некоректний
+     */
     private String validatePropertyType(String type) {
         if (!VALID_PROPERTY_TYPES.contains(type)) {
             throw new IllegalArgumentException("Invalid property type");
@@ -101,43 +150,82 @@ public class PropertyInsurance extends InsuranceObligation {
         return type;
     }
 
-    // Гетери та сетери
+    /**
+     * @return місцезнаходження майна
+     */
     public String getPropertyLocation() {
         return propertyLocation;
     }
 
+    /**
+     * @return вартість майна
+     */
     public double getPropertyValue() {
         return propertyValue;
     }
 
+    /**
+     * @return чи знаходиться у зоні підвищеного ризику
+     */
     public boolean isHighRiskArea() {
         return isHighRiskArea;
     }
 
+    /**
+     * @return тип майна
+     */
     public String getPropertyType() {
         return propertyType;
     }
 
+    /**
+     * @return чи включає стихійні лиха
+     */
     public boolean includesNaturalDisasters() {
         return includesNaturalDisasters;
     }
 
+    /**
+     * Встановлює місцезнаходження майна.
+     *
+     * @param propertyLocation місцезнаходження майна
+     */
     public void setPropertyLocation(String propertyLocation) {
         this.propertyLocation = Objects.requireNonNull(propertyLocation);
     }
 
+    /**
+     * Встановлює вартість майна.
+     *
+     * @param propertyValue вартість майна
+     */
     public void setPropertyValue(double propertyValue) {
         this.propertyValue = validatePropertyValue(propertyValue);
     }
 
+    /**
+     * Встановлює, чи знаходиться у зоні підвищеного ризику.
+     *
+     * @param isHighRiskArea true, якщо у зоні підвищеного ризику
+     */
     public void setHighRiskArea(boolean isHighRiskArea) {
         this.isHighRiskArea = isHighRiskArea;
     }
 
+    /**
+     * Встановлює тип майна.
+     *
+     * @param propertyType тип майна
+     */
     public void setPropertyType(String propertyType) {
         this.propertyType = validatePropertyType(propertyType);
     }
 
+    /**
+     * Встановлює, чи включає стихійні лиха.
+     *
+     * @param includesNaturalDisasters true, якщо включає стихійні лиха
+     */
     public void setIncludesNaturalDisasters(boolean includesNaturalDisasters) {
         this.includesNaturalDisasters = includesNaturalDisasters;
     }

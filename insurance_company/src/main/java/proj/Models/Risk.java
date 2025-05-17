@@ -2,6 +2,10 @@ package proj.Models;
 
 import java.util.Objects;
 
+/**
+ * Клас Risk представляє страховий ризик.
+ * Містить код, назву, опис, базовий коефіцієнт ризику та категорію ризику.
+ */
 public class Risk {
     private String code;
     private String name;
@@ -9,12 +13,24 @@ public class Risk {
     private double baseRiskFactor;
     private RiskCategory category;
 
+    /**
+     * Перелік категорій ризиків.
+     */
     public enum RiskCategory {
         PROPERTY, HEALTH, LIFE, LIABILITY, FINANCIAL
     }
 
-    public Risk(String code, String name, String description, 
-               double baseRiskFactor, RiskCategory category) {
+    /**
+     * Конструктор для створення ризику.
+     *
+     * @param code           код ризику
+     * @param name           назва ризику
+     * @param description    опис ризику
+     * @param baseRiskFactor базовий коефіцієнт ризику
+     * @param category       категорія ризику
+     */
+    public Risk(String code, String name, String description,
+            double baseRiskFactor, RiskCategory category) {
         this.code = validateCode(code);
         this.name = Objects.requireNonNull(name);
         this.description = description;
@@ -22,7 +38,6 @@ public class Risk {
         this.category = Objects.requireNonNull(category);
     }
 
-    // Гетери та сетери
     public String getCode() {
         return code;
     }
@@ -59,7 +74,13 @@ public class Risk {
         this.category = Objects.requireNonNull(category);
     }
 
-    // Валідація
+    /**
+     * Валідує код ризику.
+     *
+     * @param code код ризику
+     * @return валідний код
+     * @throws IllegalArgumentException якщо код некоректний
+     */
     private String validateCode(String code) {
         if (code == null || code.length() < 2) {
             throw new IllegalArgumentException("Risk code must be at least 2 character long");
@@ -67,6 +88,13 @@ public class Risk {
         return code.toUpperCase();
     }
 
+    /**
+     * Валідує коефіцієнт ризику.
+     *
+     * @param factor коефіцієнт ризику
+     * @return валідний коефіцієнт
+     * @throws IllegalArgumentException якщо коефіцієнт некоректний
+     */
     private double validateRiskFactor(double factor) {
         if (factor <= 0) {
             throw new IllegalArgumentException("Risk factor must be positive");
@@ -76,8 +104,10 @@ public class Risk {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Risk risk = (Risk) o;
         return code.equals(risk.code);
     }
