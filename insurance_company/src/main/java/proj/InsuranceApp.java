@@ -35,7 +35,7 @@ public class InsuranceApp extends JFrame {
             }
             logger.info("База даних успішно ініціалізована");
         } catch (Exception e) {
-            logger.fatal("Невідома помилка під час ініціалізації бази даних: {}", e.getMessage(), e);
+            logger.error("Невідома помилка під час ініціалізації бази даних: {}", e.getMessage(), e);
             JOptionPane.showMessageDialog(this,
                     "Помилка підключення до бази даних: " + e.getMessage(),
                     "Помилка бази даних",
