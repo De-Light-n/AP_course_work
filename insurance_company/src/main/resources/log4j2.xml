@@ -14,13 +14,13 @@
 
         <SMTP name="EmailAppender"
               subject="Критична помилка в додатку"
-              to="пошта"
-              from="пошта"
+              to="nazarajko2@gmail.com"
+              from="nazarajko2@gmail.com"
               smtpHost="smtp.gmail.com"
               smtpPort="465"
               smtpProtocol="smtps"
-              smtpUsername="пошта"
-              smtpPassword="пароль додатку" 
+              smtpUsername="nazarajko2@gmail.com"
+              smtpPassword="gmbj zzae cllf kytc" 
               smtpDebug="true"
               bufferSize="1" 
               ignoreExceptions="true">
@@ -46,8 +46,8 @@
         <Root level="INFO"> 
             <AppenderRef ref="FileAppender"/>
             <AppenderRef ref="ConsoleAppender"/>
-            <AppenderRef ref="ErrorFileAppender"/>
-            <AppenderRef ref="EmailAppender"/>
+            <!-- <AppenderRef ref="ErrorFileAppender"/>
+            <AppenderRef ref="EmailAppender"/> -->
         </Root>
     </Loggers>
 </Configuration>
