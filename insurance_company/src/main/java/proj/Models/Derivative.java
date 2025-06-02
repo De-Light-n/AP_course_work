@@ -201,6 +201,98 @@ public class Derivative {
         this.updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Фільтрує зобов'язання за текстовим пошуком та діапазоном розрахункової вартості.
+     *
+     * @param searchText текст для пошуку
+     * @param minCalc мінімальна розрахункова вартість
+     * @param maxCalc максимальна розрахункова вартість
+     * @return відфільтрований список зобов'язань
+     */
+    public List<InsuranceObligation> filterObligations(String searchText, double minCalc, double maxCalc) {
+        return obligations.stream()
+                .filter(o -> {
+                    double calcVal = o.getCalculatedValue();
+                    boolean inRange = calcVal >= minCalc && calcVal <= maxCalc;
+                    boolean matches = searchText.isEmpty()
+                            || String.valueOf(o.getPolicyNumber()).toLowerCase().contains(searchText)
+                            || o.getType().toLowerCase().contains(searchText)
+                            || String.valueOf(o.getRiskLevel()).contains(searchText)
+                            || String.valueOf(o.getAmount()).contains(searchText)
+                            || String.valueOf(o.getCalculatedValue()).contains(searchText)
+                            || o.getStatus().toString().toLowerCase().contains(searchText);
+                    return inRange && matches;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Сортує список зобов'язань згідно з вибраним критерієм.
+     *
+     * @param obligations список для сортування
+     * @param sortOption критерій сортування
+     * @return відсортований список зобов'язань
+     */
+    public List<InsuranceObligation> sortObligations(List<InsuranceObligation> obligations, String sortOption) {
+        if (sortOption == null) return obligations;
+        
+        List<InsuranceObligation> sorted = new ArrayList<>(obligations);
+        switch (sortOption) {
+            case "Номер полісу (зростання)":
+                sorted.sort(Comparator.comparing(InsuranceObligation::getPolicyNumber));
+                break;
+            case "Номер полісу (спадання)":
+                sorted.sort(Comparator.comparing(InsuranceObligation::getPolicyNumber).reversed());
+                break;
+            case "Тип":
+                sorted.sort(Comparator.comparing(InsuranceObligation::getType));
+                break;
+            case "Рівень ризику (зростання)":
+                sorted.sort(Comparator.comparingDouble(InsuranceObligation::getRiskLevel));
+                break;
+            case "Рівень ризику (спадання)":
+                sorted.sort(Comparator.comparingDouble(InsuranceObligation::getRiskLevel).reversed());
+                break;
+            case "Сума (зростання)":
+                sorted.sort(Comparator.comparingDouble(InsuranceObligation::getAmount));
+                break;
+            case "Сума (спадання)":
+                sorted.sort(Comparator.comparingDouble(InsuranceObligation::getAmount).reversed());
+                break;
+            case "Розрах. вартість (зростання)":
+                sorted.sort(Comparator.comparingDouble(InsuranceObligation::getCalculatedValue));
+                break;
+            case "Розрах. вартість (спадання)":
+                sorted.sort(Comparator.comparingDouble(InsuranceObligation::getCalculatedValue).reversed());
+                break;
+            case "Статус":
+                sorted.sort(Comparator.comparing(o -> o.getStatus().toString()));
+                break;
+        }
+        return sorted;
+    }
+
+    /**
+     * Фільтрує та сортує зобов'язання згідно з параметрами.
+     *
+     * @param searchText текст для пошуку
+     * @param minCalcStr мінімальна розрахункова вартість (як строка)
+     * @param maxCalcStr максимальна розрахункова вартість (як строка)
+     * @param sortOption критерій сортування
+     * @return відфільтрований та відсортований список зобов'язань
+     */
+    public List<InsuranceObligation> filterAndSortObligations(String searchText, String minCalcStr, String maxCalcStr, String sortOption) {
+        try {
+            double minCalc = minCalcStr.isEmpty() ? 0 : Double.parseDouble(minCalcStr);
+            double maxCalc = maxCalcStr.isEmpty() ? Double.MAX_VALUE : Double.parseDouble(maxCalcStr);
+
+            List<InsuranceObligation> filtered = filterObligations(searchText.toLowerCase(), minCalc, maxCalc);
+            return sortObligations(filtered, sortOption);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

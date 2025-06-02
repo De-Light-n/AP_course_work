@@ -17,9 +17,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Вкладка для перегляду та керування деталями деривативи.
@@ -282,81 +280,24 @@ public class DerivativeDetailsTab extends AbstractTab {
      */
     private void filterAndSortObligations() {
         logger.debug("Фільтрація та сортування зобов'язань для деривативи: {}", derivative.getName());
-        String searchText = searchField.getText().toLowerCase();
-        double minCalc, maxCalc;
-        List<InsuranceObligation> filtered;
-        try {
-            minCalc = minCalcValueField.getText().isEmpty() ? 0 : Double.parseDouble(minCalcValueField.getText());
-            maxCalc = maxCalcValueField.getText().isEmpty() ? Double.MAX_VALUE
-                    : Double.parseDouble(maxCalcValueField.getText());
+        String searchText = searchField.getText();
+        String minCalcStr = minCalcValueField.getText();
+        String maxCalcStr = maxCalcValueField.getText();
+        String sortOption = (String) sortOptions.getSelectedItem();
 
-            filtered = derivative.getObligations().stream()
-                    .filter(o -> {
-                        double calcVal = o.getCalculatedValue();
-                        boolean inRange = calcVal >= minCalc && calcVal <= maxCalc;
-                        boolean matches = searchText.isEmpty()
-                                || String.valueOf(o.getPolicyNumber()).toLowerCase().contains(searchText)
-                                || o.getType().toLowerCase().contains(searchText)
-                                || String.valueOf(o.getRiskLevel()).contains(searchText)
-                                || String.valueOf(o.getAmount()).contains(searchText)
-                                || String.valueOf(o.getCalculatedValue()).contains(searchText)
-                                || o.getStatus().toString().toLowerCase().contains(searchText);
-                        return inRange && matches;
-                    })
-                    .collect(Collectors.toList());
-
-            String sort = (String) sortOptions.getSelectedItem();
-            if (sort != null) {
-                switch (sort) {
-                    case "Номер полісу (зростання)":
-                        filtered.sort(Comparator.comparing(InsuranceObligation::getPolicyNumber));
-                        break;
-                    case "Номер полісу (спадання)":
-                        filtered.sort(Comparator.comparing(InsuranceObligation::getPolicyNumber).reversed());
-                        break;
-                    case "Тип":
-                        filtered.sort(Comparator.comparing(InsuranceObligation::getType));
-                        break;
-                    case "Рівень ризику (зростання)":
-                        filtered.sort(Comparator.comparingDouble(InsuranceObligation::getRiskLevel));
-                        break;
-                    case "Рівень ризику (спадання)":
-                        filtered.sort(Comparator.comparingDouble(InsuranceObligation::getRiskLevel).reversed());
-                        break;
-                    case "Сума (зростання)":
-                        filtered.sort(Comparator.comparingDouble(InsuranceObligation::getAmount));
-                        break;
-                    case "Сума (спадання)":
-                        filtered.sort(Comparator.comparingDouble(InsuranceObligation::getAmount).reversed());
-                        break;
-                    case "Розрах. вартість (зростання)":
-                        filtered.sort(Comparator.comparingDouble(InsuranceObligation::getCalculatedValue));
-                        break;
-                    case "Розрах. вартість (спадання)":
-                        filtered.sort(Comparator.comparingDouble(InsuranceObligation::getCalculatedValue).reversed());
-                        break;
-                    case "Статус":
-                        filtered.sort(Comparator.comparing(o -> o.getStatus().toString()));
-                        break;
-                }
-            }
-        } catch (Exception e) {
-            filtered = null;
-        }
+        List<InsuranceObligation> filtered = derivative.filterAndSortObligations(searchText, minCalcStr, maxCalcStr, sortOption);
 
         obligationsModel.setRowCount(0);
-        if (filtered != null) {
-            for (InsuranceObligation obligation : filtered) {
-                Object[] rowData = {
-                        obligation.getPolicyNumber(),
-                        obligation.getType(),
-                        obligation.getRiskLevel(),
-                        obligation.getAmount(),
-                        obligation.getCalculatedValue(),
-                        obligation.getStatus()
-                };
-                obligationsModel.addRow(rowData);
-            }
+        for (InsuranceObligation obligation : filtered) {
+            Object[] rowData = {
+                    obligation.getPolicyNumber(),
+                    obligation.getType(),
+                    obligation.getRiskLevel(),
+                    obligation.getAmount(),
+                    obligation.getCalculatedValue(),
+                    obligation.getStatus()
+            };
+            obligationsModel.addRow(rowData);
         }
     }
 

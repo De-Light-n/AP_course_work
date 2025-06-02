@@ -1,6 +1,7 @@
 package proj.UI.Tab;
 
 import proj.Models.Derivative;
+import proj.Models.DerivativeManager;
 import proj.Repositories.DerivativeRepository;
 import proj.UI.Dialog.*;
 
@@ -32,6 +33,7 @@ public class DerivativesTab extends AbstractTab {
     private JPanel derivativesPanel;
     private JButton addButton;
     private final DerivativeRepository derivativeRepository;
+    private final DerivativeManager derivativeManager;
     private List<Derivative> allDerivatives = new ArrayList<>();
     private JComboBox<String> sortComboBox;
     private JTextField minValueField, maxValueField;
@@ -51,6 +53,8 @@ public class DerivativesTab extends AbstractTab {
     public DerivativesTab(JTabbedPane mainTabbedPane) {
         super(mainTabbedPane);
         this.derivativeRepository = new DerivativeRepository();
+        this.derivativeManager = new DerivativeManager();
+
         initializeUI();
 
         mainTabbedPane.addChangeListener(e -> {
@@ -220,8 +224,17 @@ public class DerivativesTab extends AbstractTab {
     private void updateDerivativesDisplay() {
         derivativesPanel.removeAll();
 
-        List<Derivative> filteredDerivatives = filterDerivatives();
-        sortDerivatives(filteredDerivatives);
+        List<Derivative> filteredDerivatives = derivativeManager.filterDerivatives(
+            allDerivatives,
+            searchNameField.getText(),
+            minValueField.getText(),
+            maxValueField.getText()
+        );
+        
+        derivativeManager.sortDerivatives(
+            filteredDerivatives,
+            (String) sortComboBox.getSelectedItem()
+        );
 
         int total = filteredDerivatives.size();
         totalPages = Math.max(1, (int) Math.ceil(total / (double) CARDS_PER_PAGE));
@@ -255,64 +268,6 @@ public class DerivativesTab extends AbstractTab {
 
         derivativesPanel.revalidate();
         derivativesPanel.repaint();
-    }
-
-    /**
-     * Фільтрує деривативи за назвою та діапазоном вартості.
-     *
-     * @return відфільтрований список деривативів
-     */
-    private List<Derivative> filterDerivatives() {
-        List<Derivative> filtered = new ArrayList<>(allDerivatives);
-
-        String nameSearch = searchNameField.getText().toLowerCase();
-        if (!nameSearch.isEmpty()) {
-            filtered.removeIf(d -> !d.getName().toLowerCase().contains(nameSearch));
-        }
-
-        try {
-            double minValue = minValueField.getText().isEmpty() ? 0 : Double.parseDouble(minValueField.getText());
-            double maxValue = maxValueField.getText().isEmpty() ? Double.MAX_VALUE
-                    : Double.parseDouble(maxValueField.getText());
-
-            filtered.removeIf(d -> d.getTotalValue() < minValue || d.getTotalValue() > maxValue);
-        } catch (NumberFormatException e) {
-            // Ігноруємо некоректні числа
-        }
-
-        return filtered;
-    }
-
-    /**
-     * Сортує список деривативів згідно з вибраним критерієм.
-     *
-     * @param derivatives список деривативів для сортування
-     */
-    private void sortDerivatives(List<Derivative> derivatives) {
-        String selectedSort = (String) sortComboBox.getSelectedItem();
-        if (selectedSort == null)
-            return;
-
-        switch (selectedSort) {
-            case "Назвою (А-Я)":
-                derivatives.sort(Comparator.comparing(Derivative::getName));
-                break;
-            case "Назвою (Я-А)":
-                derivatives.sort(Comparator.comparing(Derivative::getName).reversed());
-                break;
-            case "Вартістю (зростання)":
-                derivatives.sort(Comparator.comparingDouble(Derivative::getTotalValue));
-                break;
-            case "Вартістю (спадання)":
-                derivatives.sort(Comparator.comparingDouble(Derivative::getTotalValue).reversed());
-                break;
-            case "Датою (новіші)":
-                derivatives.sort(Comparator.comparing(Derivative::getCreatedAt).reversed());
-                break;
-            case "Датою (старіші)":
-                derivatives.sort(Comparator.comparing(Derivative::getCreatedAt));
-                break;
-        }
     }
 
     /**
