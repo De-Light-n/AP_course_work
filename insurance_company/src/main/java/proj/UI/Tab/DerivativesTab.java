@@ -1,8 +1,8 @@
 package proj.UI.Tab;
 
 import proj.Models.Derivative;
-import proj.Models.DerivativeManager;
 import proj.Repositories.DerivativeRepository;
+import proj.Service.DerivativeService;
 import proj.UI.Dialog.*;
 
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +33,7 @@ public class DerivativesTab extends AbstractTab {
     private JPanel derivativesPanel;
     private JButton addButton;
     private final DerivativeRepository derivativeRepository;
-    private final DerivativeManager derivativeManager;
+    private final DerivativeService derivativeManager =  DerivativeService.getInstance();
     private List<Derivative> allDerivatives = new ArrayList<>();
     private JComboBox<String> sortComboBox;
     private JTextField minValueField, maxValueField;
@@ -53,7 +53,6 @@ public class DerivativesTab extends AbstractTab {
     public DerivativesTab(JTabbedPane mainTabbedPane) {
         super(mainTabbedPane);
         this.derivativeRepository = new DerivativeRepository();
-        this.derivativeManager = new DerivativeManager();
 
         initializeUI();
 

@@ -1,14 +1,13 @@
 package proj.Models.insurance;
 
 import java.util.Objects;
-
 import proj.Models.Risk;
 
 /**
- * Клас LifeInsurance представляє страхування життя.
- * Містить додаткові параметри, такі як вигодонабувач, включення критичних
- * захворювань
- * та нещасних випадків. Додає стандартні ризики для страхування життя.
+ * Модель страхування життя.
+ * Містить параметри: вигодонабувач, включення критичних захворювань та нещасних
+ * випадків.
+ * Додає стандартні ризики для страхування життя.
  */
 public class LifeInsurance extends InsuranceObligation {
     private String beneficiary;
@@ -16,7 +15,7 @@ public class LifeInsurance extends InsuranceObligation {
     private boolean includesAccidentalDeath;
 
     /**
-     * Конструктор для повного створення LifeInsurance.
+     * Повний конструктор для створення страхування життя.
      *
      * @param riskLevel               рівень ризику (0-1)
      * @param amount                  сума страхування
@@ -34,7 +33,6 @@ public class LifeInsurance extends InsuranceObligation {
         this.includesCriticalIllness = includesCriticalIllness;
         this.includesAccidentalDeath = includesAccidentalDeath;
 
-        // Додавання стандартних ризиків для страхування життя
         this.addRisk(new Risk("DEATH01", "Смерть", "Ризик смерті застрахованої особи", 0.25, Risk.RiskCategory.LIFE));
         if (includesCriticalIllness) {
             this.addRisk(new Risk("CRIL01", "Критичне захворювання", "Ризик критичного захворювання", 0.15,
@@ -47,7 +45,7 @@ public class LifeInsurance extends InsuranceObligation {
     }
 
     /**
-     * Конструктор для створення LifeInsurance з мінімальними параметрами.
+     * Конструктор для створення страхування життя з мінімальними параметрами.
      *
      * @param riskLevel      рівень ризику (0-1)
      * @param amount         сума страхування
@@ -75,33 +73,6 @@ public class LifeInsurance extends InsuranceObligation {
     }
 
     /**
-     * Обчислює вартість страхування з урахуванням параметрів та ризиків.
-     *
-     * @return розрахована вартість
-     */
-    @Override
-    public double calculateValue() {
-        double baseValue = getAmount() * (1 + getRiskLevel() * 0.1);
-
-        // Додаткові коефіцієнти для додаткових ризиків
-        if (includesCriticalIllness) {
-            baseValue *= 1.3;
-        }
-        if (includesAccidentalDeath) {
-            baseValue *= 1.2;
-        }
-
-        // Врахування ризиків
-        double riskFactor = getCoveredRisks().stream()
-                .mapToDouble(Risk::getBaseRiskFactor)
-                .sum();
-        baseValue *= (1 + riskFactor);
-
-        setCalculatedValue(baseValue);
-        return baseValue;
-    }
-
-    /**
      * Повертає вигодонабувача.
      *
      * @return вигодонабувач
@@ -120,7 +91,7 @@ public class LifeInsurance extends InsuranceObligation {
     }
 
     /**
-     * Перевіряє, чи включає критичні захворювання.
+     * Чи включає критичні захворювання.
      *
      * @return true, якщо включає критичні захворювання
      */
@@ -129,7 +100,7 @@ public class LifeInsurance extends InsuranceObligation {
     }
 
     /**
-     * Перевіряє, чи включає нещасний випадок.
+     * Чи включає нещасний випадок.
      *
      * @return true, якщо включає нещасний випадок
      */

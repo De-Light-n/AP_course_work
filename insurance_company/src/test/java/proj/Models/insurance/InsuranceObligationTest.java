@@ -96,15 +96,6 @@ class InsuranceObligationTest {
     }
 
     @Test
-    void testLifeInsuranceCalculateValue() {
-        LifeInsurance insurance = new LifeInsurance(0.5, 1000.0, 12, "Beneficiary", true, true);
-        double value = insurance.calculateValue();
-        
-        assertTrue(value > 1000.0); // Базове значення має бути більше суми
-        assertEquals(value, insurance.getCalculatedValue());
-    }
-
-    @Test
     void testLifeInsuranceSetters() {
         LifeInsurance insurance = new LifeInsurance(0.5, 1000.0, 12);
         
@@ -154,14 +145,6 @@ class InsuranceObligationTest {
         assertTrue(insurance.getCoveredRisks().contains(risk2));
     }
 
-    @Test
-    void testCalculatePremiumPerMonth() {
-        LifeInsurance insurance = new LifeInsurance(0.5, 1200.0, 12);
-        double value = insurance.calculateValue();
-        double premium = insurance.calculatePremiumPerMonth();
-        assertEquals(value / 12, premium);
-    }
-
     // Тести для PropertyInsurance
     @Test
     void testPropertyInsuranceConstructor() {
@@ -176,15 +159,6 @@ class InsuranceObligationTest {
         
         Set<Risk> risks = insurance.getCoveredRisks();
         assertEquals(3, risks.size());
-    }
-
-    @Test
-    void testPropertyInsuranceCalculateValue() {
-        PropertyInsurance insurance = new PropertyInsurance(0.3, 50000.0, 24, "Kyiv", 100000.0, true, "HOUSE", true);
-        double value = insurance.calculateValue();
-        
-        assertTrue(value > 50000.0);
-        assertEquals(value, insurance.getCalculatedValue());
     }
 
     @Test
@@ -237,15 +211,6 @@ class InsuranceObligationTest {
         LifeInsurance insurance = new LifeInsurance(0.5, 1000.0, 12);
         insurance.setDurationMonths(24);
         assertEquals(24, insurance.getDurationMonths());
-    }
-
-    @Test
-    void testHealthInsuranceCalculateValue() {
-        HealthInsurance insurance = new HealthInsurance(0.4, 2000.0, 12, 55, true, 10000, true, true);
-        double value = insurance.calculateValue();
-        
-        assertTrue(value > 2000.0);
-        assertEquals(value, insurance.getCalculatedValue());
     }
 
     @Test

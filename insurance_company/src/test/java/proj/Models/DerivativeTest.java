@@ -9,7 +9,6 @@ import proj.Models.Risk.RiskCategory;
 import org.junit.jupiter.api.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -87,81 +86,6 @@ class DerivativeTest {
         
         assertEquals(2, derivative.getObligations().size());
         assertTrue(derivative.getTotalValue() > 0);
-    }
-
-    @Test
-    void testSortByRiskLevel() {
-        derivative.addObligation(lifeInsurance); // riskLevel = 0.5
-        derivative.addObligation(healthInsurance); // riskLevel = 0.3
-        derivative.addObligation(propertyInsurance); // riskLevel = 0.4
-        
-        derivative.sortByRiskLevel();
-        
-        List<InsuranceObligation> sorted = derivative.getObligations();
-        assertEquals(0.5, sorted.get(0).getRiskLevel(), 0.001);
-        assertEquals(0.4, sorted.get(1).getRiskLevel(), 0.001);
-        assertEquals(0.3, sorted.get(2).getRiskLevel(), 0.001);
-    }
-
-    @Test
-    void testFindObligationsInRange() {
-        derivative.addObligation(lifeInsurance); // risk=0.5, amount=100000
-        derivative.addObligation(healthInsurance); // risk=0.3, amount=50000
-        derivative.addObligation(propertyInsurance); // risk=0.4, amount=500000
-        
-        List<InsuranceObligation> result = derivative.findObligationsInRange(0.3, 0.4, 40000, 60000);
-        
-        assertEquals(1, result.size());
-        assertEquals(healthInsurance, result.get(0));
-    }
-
-    @Test
-    void testCountRisksByCategory() {
-        derivative.addObligation(lifeInsurance);
-        derivative.addObligation(healthInsurance);
-        derivative.addObligation(propertyInsurance);
-        
-        Map<RiskCategory, Long> counts = derivative.countRisksByCategory();
-        
-        assertEquals(2, counts.get(RiskCategory.LIFE));
-        assertEquals(2, counts.get(RiskCategory.HEALTH));
-        assertEquals(3, counts.get(RiskCategory.PROPERTY));
-    }
-
-    @Test
-    void testCalculateAverageRisk() {
-        derivative.addObligation(lifeInsurance); // 0.5
-        derivative.addObligation(healthInsurance); // 0.3
-        derivative.addObligation(propertyInsurance); // 0.4
-        
-        double average = derivative.calculateAverageRisk();
-        assertEquals((0.5 + 0.3 + 0.4) / 3, average, 0.001);
-    }
-
-    @Test
-    void testCountObligationsByType() {
-        derivative.addObligation(lifeInsurance);
-        derivative.addObligation(healthInsurance);
-        derivative.addObligation(propertyInsurance);
-        
-        Map<String, Long> counts = derivative.countObligationsByType();
-        
-        assertEquals(1, counts.get("LifeInsurance"));
-        assertEquals(1, counts.get("HealthInsurance"));
-        assertEquals(1, counts.get("PropertyInsurance"));
-    }
-
-    @Test
-    void testGetActiveObligations() {
-        lifeInsurance.setStatus(InsuranceObligation.ObligationStatus.ACTIVE);
-        healthInsurance.setStatus(InsuranceObligation.ObligationStatus.DRAFT);
-        
-        derivative.addObligation(lifeInsurance);
-        derivative.addObligation(healthInsurance);
-        
-        List<InsuranceObligation> active = derivative.getActiveObligations();
-        assertEquals(1, active.size());
-        assertEquals(lifeInsurance, active.get(0));
     }
 
     @Test

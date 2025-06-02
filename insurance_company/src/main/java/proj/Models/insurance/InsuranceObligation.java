@@ -10,8 +10,7 @@ import proj.Models.Risk;
 /**
  * Абстрактний клас, що представляє страхове зобов'язання.
  * Містить основні поля, такі як сума, тривалість, статус, ризики, дати та інше.
- * Всі конкретні типи страхових зобов'язань повинні наслідувати цей клас
- * та реалізовувати метод {@link #calculateValue()}.
+ * Всі конкретні типи страхових зобов'язань повинні наслідувати цей клас.
  */
 public abstract class InsuranceObligation {
     private int id;
@@ -394,17 +393,6 @@ public abstract class InsuranceObligation {
     }
 
     /**
-     * Обчислює щомісячний платіж за зобов'язанням.
-     *
-     * @return щомісячний платіж
-     */
-    public double calculatePremiumPerMonth() {
-        return calculateValue() / durationMonths;
-    }
-
-    // Валідація
-
-    /**
      * Валідує рівень ризику.
      *
      * @param riskLevel рівень ризику
@@ -454,13 +442,6 @@ public abstract class InsuranceObligation {
     private String generatePolicyNumber() {
         return "POL-" + System.currentTimeMillis() + "-" + (int) (Math.random() * 1000);
     }
-
-    /**
-     * Абстрактний метод для розрахунку вартості зобов'язання.
-     *
-     * @return розрахована вартість
-     */
-    public abstract double calculateValue();
 
     /**
      * Дозволяє безпечно привести до потрібного підкласу або кинути виняток.

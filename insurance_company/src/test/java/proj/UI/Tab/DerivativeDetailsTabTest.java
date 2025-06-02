@@ -6,6 +6,7 @@ import org.assertj.swing.junit.testcase.AssertJSwingJUnitTestCase;
 import org.junit.Test;
 import proj.Models.Derivative;
 import proj.Models.insurance.*;
+import proj.Service.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,9 +19,11 @@ public class DerivativeDetailsTabTest extends AssertJSwingJUnitTestCase {
     private JTabbedPane tabbedPane;
     private FrameFixture window;
     private Derivative testDerivative;
+    private DerivativeService derivativeService = DerivativeService.getInstance();
 
     @Override
     protected void onSetUp() {
+        
         // Create test data
         testDerivative = new Derivative("Test Derivative");
 
@@ -178,7 +181,7 @@ public class DerivativeDetailsTabTest extends AssertJSwingJUnitTestCase {
         assertTrue(countLabel.getText().contains(String.valueOf(testDerivative.getObligations().size())));
 
         JLabel avgRiskLabel = window.label("avgRiskLabel").target();
-        assertTrue(avgRiskLabel.getText().contains(String.valueOf(testDerivative.calculateAverageRisk())));
+        assertTrue(avgRiskLabel.getText().contains(String.valueOf(derivativeService.calculateAverageRisk(testDerivative))));
     }
 
     // Helper method to find dialog by name

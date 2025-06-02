@@ -9,6 +9,8 @@ import proj.Models.Risk;
 import proj.Database.DatabaseManager;
 import proj.Models.Derivative;
 
+import proj.Service.InsuranceService;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +30,7 @@ public class InsuranceObligationRepository {
     private static final Logger logger = LogManager.getLogger(InsuranceObligationRepository.class);
 
     private final DatabaseManager dbManager;
+    private final InsuranceService insuranceService = InsuranceService.getInstance();
     private DerivativeRepository derivativeRepository;
 
     public InsuranceObligationRepository() {
@@ -53,6 +56,10 @@ public class InsuranceObligationRepository {
      */
     public InsuranceObligation save(InsuranceObligation obligation) throws SQLException {
         logger.info("Збереження зобов'язання: {}", obligation.getPolicyNumber());
+        // Оновлюємо розраховану вартість через InsuranceService перед збереженням
+        double calculatedValue = insuranceService.calculateObligationValue(obligation);
+        obligation.setCalculatedValue(calculatedValue);
+
         if (obligation.getId() == 0) {
             return insert(obligation);
         } else {
@@ -72,6 +79,7 @@ public class InsuranceObligationRepository {
         logger.info("Збереження зобов'язання {} для деривативи {}", obligation.getPolicyNumber(), derivative.getName());
         InsuranceObligation savedObligation = save(obligation);
         if (derivative != null) {
+            // Додаємо через сервіс, якщо логіка додавання винесена
             derivative.addObligation(savedObligation);
             getDerivativeRepository().save(derivative);
         }
@@ -125,6 +133,63 @@ public class InsuranceObligationRepository {
         }
         logger.error("Не вдалося оновити зобов'язання з ID: {}", obligation.getId());
         throw new SQLException("Failed to update insurance obligation");
+    }
+
+    private void setObligationParameters(PreparedStatement stmt, InsuranceObligation obligation)
+            throws SQLException {
+        stmt.setString(1, obligation.getPolicyNumber());
+        stmt.setString(2, obligation.getType().toUpperCase());
+        stmt.setDouble(3, obligation.getRiskLevel());
+        stmt.setDouble(4, obligation.getAmount());
+        stmt.setInt(5, obligation.getDurationMonths());
+
+        // Оновлюємо розраховану вартість через InsuranceService
+        double calculatedValue = insuranceService.calculateTotalObligationsValue(List.of(obligation));
+        obligation.setCalculatedValue(calculatedValue);
+        stmt.setDouble(6, calculatedValue);
+
+        stmt.setTimestamp(7, Timestamp.valueOf(obligation.getStartDate()));
+        stmt.setTimestamp(8, Timestamp.valueOf(obligation.getEndDate()));
+        stmt.setString(9, obligation.getStatus().toString());
+        stmt.setString(10, obligation.getNotes());
+        stmt.setTimestamp(11, Timestamp.valueOf(obligation.getCreatedAt()));
+        stmt.setTimestamp(12, Timestamp.valueOf(obligation.getUpdatedAt()));
+    }
+
+    private InsuranceObligation mapObligationFromResultSet(ResultSet rs) throws SQLException {
+        InsuranceObligation obligation = new InsuranceObligation(
+                rs.getDouble("risk_level"),
+                rs.getDouble("amount"),
+                rs.getInt("duration_months")) {
+        };
+
+        obligation.setId(rs.getInt("id"));
+        obligation.setPolicyNumber(rs.getString("policy_number"));
+        obligation.setType(rs.getString("type"));
+        obligation.setCalculatedValue(rs.getDouble("calculated_value"));
+        obligation.setStartDate(rs.getTimestamp("start_date").toLocalDateTime());
+        obligation.setEndDate(rs.getTimestamp("end_date").toLocalDateTime());
+        obligation.setStatus(ObligationStatus.valueOf(rs.getString("status")));
+        obligation.setNotes(rs.getString("notes"));
+        obligation.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        obligation.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+
+        switch (obligation.getType()) {
+            case "LIFE":
+                obligation = new LifeInsurance(obligation);
+                break;
+            case "HEALTH":
+                obligation = new HealthInsurance(obligation);
+                break;
+            case "PROPERTY":
+                obligation = new PropertyInsurance(obligation);
+                break;
+            default:
+                throw new SQLException("Unknown insurance type: " + obligation.getType());
+        }
+        loadSpecificTypeData(obligation);
+
+        return obligation;
     }
 
     /**
@@ -232,62 +297,6 @@ public class InsuranceObligationRepository {
             }
         }
         return obligations;
-    }
-
-    private void setObligationParameters(PreparedStatement stmt, InsuranceObligation obligation)
-            throws SQLException {
-        stmt.setString(1, obligation.getPolicyNumber());
-        stmt.setString(2, obligation.getType().toUpperCase());
-        stmt.setDouble(3, obligation.getRiskLevel());
-        stmt.setDouble(4, obligation.getAmount());
-        stmt.setInt(5, obligation.getDurationMonths());
-        stmt.setDouble(6, obligation.getCalculatedValue());
-        stmt.setTimestamp(7, Timestamp.valueOf(obligation.getStartDate()));
-        stmt.setTimestamp(8, Timestamp.valueOf(obligation.getEndDate()));
-        stmt.setString(9, obligation.getStatus().toString());
-        stmt.setString(10, obligation.getNotes());
-        stmt.setTimestamp(11, Timestamp.valueOf(obligation.getCreatedAt()));
-        stmt.setTimestamp(12, Timestamp.valueOf(obligation.getUpdatedAt()));
-    }
-
-    private InsuranceObligation mapObligationFromResultSet(ResultSet rs) throws SQLException {
-        InsuranceObligation obligation = new InsuranceObligation(
-                rs.getDouble("risk_level"),
-                rs.getDouble("amount"),
-                rs.getInt("duration_months")) {
-            @Override
-            public double calculateValue() {
-                return getCalculatedValue();
-            }
-        };
-
-        obligation.setId(rs.getInt("id"));
-        obligation.setPolicyNumber(rs.getString("policy_number"));
-        obligation.setType(rs.getString("type"));
-        obligation.setCalculatedValue(rs.getDouble("calculated_value"));
-        obligation.setStartDate(rs.getTimestamp("start_date").toLocalDateTime());
-        obligation.setEndDate(rs.getTimestamp("end_date").toLocalDateTime());
-        obligation.setStatus(ObligationStatus.valueOf(rs.getString("status")));
-        obligation.setNotes(rs.getString("notes"));
-        obligation.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-        obligation.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
-
-        switch (obligation.getType()) {
-            case "LIFE":
-                obligation = new LifeInsurance(obligation);
-                break;
-            case "HEALTH":
-                obligation = new HealthInsurance(obligation);
-                break;
-            case "PROPERTY":
-                obligation = new PropertyInsurance(obligation);
-                break;
-            default:
-                throw new SQLException("Unknown insurance type: " + obligation.getType());
-        }
-        loadSpecificTypeData(obligation);
-
-        return obligation;
     }
 
     private void saveRisks(InsuranceObligation obligation) throws SQLException {

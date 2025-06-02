@@ -4,6 +4,9 @@ import proj.Models.Derivative;
 import proj.Models.insurance.InsuranceObligation;
 import proj.Repositories.DerivativeRepository;
 import proj.Repositories.InsuranceObligationRepository;
+import proj.Service.InsuranceService;
+import proj.Service.DerivativeService;
+
 import proj.UI.Dialog.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,6 +30,9 @@ import java.util.List;
  */
 public class DerivativeDetailsTab extends AbstractTab {
     private static final Logger logger = LogManager.getLogger(DerivativeDetailsTab.class);
+
+    private final InsuranceService insuranceService = InsuranceService.getInstance();
+    private final DerivativeService derivativeService = DerivativeService.getInstance();
     private final Derivative derivative;
     private DefaultTableModel obligationsModel;
     private JTable obligationsTable;
@@ -199,7 +205,7 @@ public class DerivativeDetailsTab extends AbstractTab {
         totalLabel.setName("totalLabel");
         JLabel countLabel = new JLabel("Кількість зобов'язань: " + derivative.getObligations().size());
         countLabel.setName("countLabel");
-        JLabel avgRiskLabel = new JLabel("Середній ризик: " + derivative.calculateAverageRisk());
+        JLabel avgRiskLabel = new JLabel("Середній ризик: " + derivativeService.calculateAverageRisk(derivative));
         avgRiskLabel.setName("avgRiskLabel");
 
         Font labelFont = DEFAULT_FONT.deriveFont(Font.BOLD);
@@ -285,7 +291,7 @@ public class DerivativeDetailsTab extends AbstractTab {
         String maxCalcStr = maxCalcValueField.getText();
         String sortOption = (String) sortOptions.getSelectedItem();
 
-        List<InsuranceObligation> filtered = derivative.filterAndSortObligations(searchText, minCalcStr, maxCalcStr, sortOption);
+        List<InsuranceObligation> filtered = insuranceService.filterAndSortObligations(derivative.getObligations(), searchText, minCalcStr, maxCalcStr, sortOption);
 
         obligationsModel.setRowCount(0);
         for (InsuranceObligation obligation : filtered) {

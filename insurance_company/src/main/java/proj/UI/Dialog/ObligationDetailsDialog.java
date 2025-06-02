@@ -3,6 +3,7 @@ package proj.UI.Dialog;
 import proj.Models.insurance.*;
 import proj.Models.insurance.InsuranceObligation.ObligationStatus;
 import proj.Repositories.InsuranceObligationRepository;
+import proj.Service.InsuranceService;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,7 @@ public class ObligationDetailsDialog extends BaseDialog {
 
     private final InsuranceObligation obligation;
     private final InsuranceObligationRepository repository = new InsuranceObligationRepository();
+    private final InsuranceService insuranceService = InsuranceService.getInstance();
     private boolean dataChanged = false;
 
     private JComboBox<ObligationStatus> statusCombo;
@@ -291,7 +293,7 @@ public class ObligationDetailsDialog extends BaseDialog {
             obligation.setDurationMonths(Integer.parseInt(durationField.getText()));
             obligation.setNotes(notesField.getText());
 
-            obligation.calculateValue();
+            obligation.setCalculatedValue(insuranceService.calculateObligationValue(obligation));
             repository.save(obligation);
             logger.info("Зобов'язання з ID {} успішно збережено", obligation.getId());
             saved = true;
